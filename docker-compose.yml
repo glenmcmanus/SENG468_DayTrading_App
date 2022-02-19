@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  transaction_server:
+    image: python:3.8
+    deploy:
+      replicas: 1
+    build: src/TransactionServer
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
