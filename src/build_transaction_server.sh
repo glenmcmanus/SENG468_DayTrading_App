@@ -1,0 +1,1 @@
+docker build -f $PWD/TransactionServer/Dockerfile -t transaction_server .

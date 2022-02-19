@@ -4,7 +4,7 @@
 FROM python:3.8
 
 # set the working directory in the container
-WORKDIR /src
+WORKDIR /code
 
 # copy the dependencies file to the working directory
 #COPY requirements.txt .
@@ -13,8 +13,13 @@ WORKDIR /src
 #RUN pip install -r requirements.txt
 
 # copy the content of the local src directory to the working directory
-COPY src/Common ./Common
-COPY src/TransactionServer ./TransactionServer
+
+RUN mkdir -p ./src
+RUN mkdir -p ./src/Common
+RUN mkdir -p ./src/TransactionServer
+
+COPY ./Common ./src/Common
+COPY ./TransactionServer ./src/TransactionServer
 
 # command to run on container start
-CMD [ "python", "./transactionServer.py" ]
+CMD [ "python", "-m", "src.TransactionServer.transactionServer" ]
