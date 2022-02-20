@@ -1,4 +1,6 @@
 import asyncio
+import os
+import socket
 import src.Common.Constants as Const
 
 
@@ -151,11 +153,14 @@ async def cancel_set_sell(userid, stock_symbol):
 
 
 async def main():
+
+    my_ip = socket.getfqdn()
+
     server = await asyncio.start_server(
-        handle_echo, '127.0.0.1', 8888)
+        handle_echo, my_ip, 8888)
 
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
-    print(f'Serving on {addrs}')
+    print(f'Serving on {addrs}', flush=True)
 
     async with server:
         await server.serve_forever()
