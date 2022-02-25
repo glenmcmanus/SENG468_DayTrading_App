@@ -1,4 +1,4 @@
-from subprocess import Popen, PIPE, run
+git from subprocess import Popen, PIPE, run
 
 #This code is incomplete
 
@@ -8,7 +8,7 @@ from subprocess import Popen, PIPE, run
 #send output to transaction server (possibly a different file)
 
 def query_server(stock_symbol, username):
-    proc = Popen(['nc', '192.168.4.2', '4444'], stdin=PIPE, stdout=PIPE)
+    proc = Popen(['nc 192.168.4.2 4444'], stdin=PIPE, stdout=PIPE, shell=True)
     proc.stdin.write(("" + stock_symbol + " " + username + "\r").encode("utf-8"))
     output = proc.communicate()[0]
     return output.decode("utf-8")
@@ -19,6 +19,7 @@ def process_request(stock_symbol, username):
 
 def main():
     stock_info = process_request("TES", "fakeUser")
+    print(stock_info)
     print(stock_info[0])
     print(stock_info[1])
     print(stock_info[2])
