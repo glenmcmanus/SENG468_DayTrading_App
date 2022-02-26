@@ -1,5 +1,18 @@
 var express = require('express');
 var router = express.Router();
+const logger = require('morgan');
+const cors = require('cors');
+
+router.use(
+  cors({
+    origin: 'http://localhost:9000',
+    credentials: true,
+  })
+);
+
+router.use(logger('dev'));
+router.use(express.json());
+router.use(express.urlencoded({ extended: false }));
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -18,10 +31,30 @@ router.delete('/user', (req, res) => {
   res.send('Got a DELETE request at /user')
 })
 
+router.get('/api/searchTerm', function(req, res) {
+  console.log('search term');
+  res.writeHead(200, {
+    'Content-Type': 'application/json',
+  });
+  console.log('Search term : ', JSON.stringify(stocks));
+  res.end(JSON.stringify(stocks));
+});
+
+router.post('/api/searchTerm', function(req, res) {
+  let stockSearch = req.body.stock;
+  console.log('search for ' + stockSearch);
+});
+
+
 router.get('/api/getList', (req, res) => {
-  const list = ['item1', 'item2', 'item3'];
+  const list = [
+    { name: "MSFT", shares: 2, price: 200  },
+    { name: "AMZN", shares: 1, price: 200 },
+    { name: "AAPL", shares: 10, price: 400 },
+  ];
   res.json(list);
   console.log('sent list of items');
 })
+
 
 module.exports = router;
