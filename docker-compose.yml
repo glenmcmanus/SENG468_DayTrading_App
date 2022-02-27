@@ -1,24 +1,39 @@
 version: "3.9"
 
 services:
+
+  #fetch_server:
+  #  image: python:3.8
+  #  ports: ${FETCH_PORT}:${FETCH_PORT}
+  #  networks:
+  #    backend:
+  #      ipv4_address: ${FETCH_IP}
+
   transaction_server:
     image: python:3.8
-    deploy:
-      replicas: 1
     build:
       context: .
-      dockerfile: src/TransactionServer/Dockerfile
+      dockerfile: TransactionServer/Dockerfile
     env_file:
       - .env
+    ports:
+      - ${TRANSACTION_PORT}:${TRANSACTION_PORT}
     networks:
       backend:
         ipv4_address: ${TRANSACTION_IP}
 
-  #fetch_server:
-  #  image: python:3.8
-  #  networks:
-  #    backend:
-  #      ipv4_address: ${FETCH_IP}
+  web_server:
+    image: node:16
+    build:
+      context: .
+      dockerfile: WebServer/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - ${WEB_PORT}:${WEB_PORT}
+    networks:
+      backend:
+        ipv4_address: ${WEB_IP}
 
 networks:
   backend:

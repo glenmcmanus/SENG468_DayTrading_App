@@ -1,7 +1,7 @@
 import asyncio
 import os
 import socket
-import src.Common.Constants as Const
+import Common.src.Constants as Const
 
 async def handle_echo(reader, writer):
     data = await reader.read(100)

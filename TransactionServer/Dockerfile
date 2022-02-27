@@ -14,12 +14,12 @@ WORKDIR /code
 
 # copy the content of the local src directory to the working directory
 
-RUN mkdir -p ./src
-RUN mkdir -p ./src/Common
-RUN mkdir -p ./src/TransactionServer
+RUN mkdir -p .
+RUN mkdir -p ./Common
+RUN mkdir -p ./TransactionServer
 
-COPY ./src/Common ./src/Common
-COPY ./src/TransactionServer ./src/TransactionServer
+COPY ./../Common ./Common
+COPY ./TransactionServer ./TransactionServer
 
 # command to run on container start
-CMD [ "python", "-m", "src.TransactionServer.transactionServer" ]
+CMD [ "python", "-m", "TransactionServer.src.transactionServer" ]
