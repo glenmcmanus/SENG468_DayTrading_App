@@ -3,38 +3,43 @@ version: "3.9"
 services:
 
   fetch_server:
-    image: python:3.8
+    image: fetch_server
     build:
-      context: .
-      dockerfile: LegacyServer/Dockerfile
+      context: ./LegacyServer
+      dockerfile: ./Dockerfile
     env_file:
       - .env
+      - ./LegacyServer/legacy.env
     ports:
       - ${FETCH_PORT}:${FETCH_PORT}
     networks:
       backend:
         ipv4_address: ${FETCH_IP}
+    #entrypoint: [ "ls" ]
 
   transaction_server:
-    image: python:3.8
+    image: transaction_server
     build:
       context: .
-      dockerfile: TransactionServer/Dockerfile
+      dockerfile: ./TransactionServer/Dockerfile
     env_file:
       - .env
+      - ./TransactionServer/transaction.env
     ports:
       - ${TRANSACTION_PORT}:${TRANSACTION_PORT}
     networks:
       backend:
         ipv4_address: ${TRANSACTION_IP}
+    #entrypoint: [ "python", "-m", "TransactionServer.src.transactionServer" ]
 
   web_server:
-    image: node:16
+    image: webserver
     build:
-      context: .
-      dockerfile: WebServer/Dockerfile
+      context: ./webserver
+      dockerfile: ./Dockerfile
     env_file:
       - .env
+      - ./webserver/webserver.env
     ports:
       - ${WEB_PORT}:${WEB_PORT}
     networks:

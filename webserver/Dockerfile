@@ -1,17 +1,21 @@
 FROM node:16
 
-WORKDIR /usr/src/
+WORKDIR /usr/webserver/
 
-COPY ./app/package*.json ./app/.
+RUN mkdir -p ./api
 
-WORKDIR /usr/src/app
+COPY ./api/package*.json ./api/.
+
+WORKDIR /usr/webserver/api/
 RUN npm install
 
-WORKDIR /usr/src/
+WORKDIR /usr/webserver/
 
 COPY . .
 
 EXPOSE ${WEB_PORT_EXT}
 
-WORKDIR /usr/src/app
-CMD [ "npm", "start" ]
+WORKDIR /usr/webserver/api
+
+#RUN npm start
+CMD ["npm", "start"]

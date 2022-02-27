@@ -4,7 +4,7 @@
 FROM python:3.8
 
 # set the working directory in the container
-WORKDIR /code
+WORKDIR /usr/legacy_quote
 
 # copy the dependencies file to the working directory
 #COPY requirements.txt .
@@ -16,7 +16,7 @@ RUN apt install -y netcat
 
 # copy the content of the local src directory to the working directory
 
-COPY src/ .
+COPY ./src/ .
 
 # command to run on container start
 CMD [ "python", "queryLegacyServer.py" ]
