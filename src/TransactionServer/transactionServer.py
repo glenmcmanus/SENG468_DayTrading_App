@@ -3,7 +3,6 @@ import os
 import socket
 import src.Common.Constants as Const
 
-
 async def handle_echo(reader, writer):
     data = await reader.read(100)
     message = data.decode()
@@ -154,10 +153,20 @@ async def cancel_set_sell(userid, stock_symbol):
 
 async def main():
 
-    my_ip = socket.getfqdn()
+    if os.environ.__contains__("TRANSACTION_IP"):
+        print(os.environ["TRANSACTION_IP"])
+        my_ip = os.environ["TRANSACTION_IP"]
+    else:
+        my_ip = socket.getfqdn()
+
+    if os.environ.__contains__("TRANSACTION_PORT"):
+        print(os.environ["TRANSACTION_PORT"])
+        my_port = os.environ["TRANSACTION_PORT"]
+    else:
+        my_port = 8889
 
     server = await asyncio.start_server(
-        handle_echo, my_ip, 8888)
+        handle_echo, my_ip, my_port)
 
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     print(f'Serving on {addrs}', flush=True)

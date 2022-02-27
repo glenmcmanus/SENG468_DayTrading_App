@@ -18,8 +18,8 @@ RUN mkdir -p ./src
 RUN mkdir -p ./src/Common
 RUN mkdir -p ./src/TransactionServer
 
-COPY ./Common ./src/Common
-COPY ./TransactionServer ./src/TransactionServer
+COPY ./src/Common ./src/Common
+COPY ./src/TransactionServer ./src/TransactionServer
 
 # command to run on container start
 CMD [ "python", "-m", "src.TransactionServer.transactionServer" ]
