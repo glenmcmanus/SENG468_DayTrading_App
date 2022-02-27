@@ -1,9 +1,8 @@
 import asyncio
 import os
-import socket
 import Common.src.Constants as Const
 
-async def handle_echo(reader, writer):
+async def handle_user_request(reader, writer):
     data = await reader.read(100)
     message = data.decode()
     addr = writer.get_extra_info('peername')
@@ -76,7 +75,31 @@ async def add_funds(userid, amount):
 
 async def quote(userid, stock_symbol):
     print("User ", userid, " get quote for ", stock_symbol)
-    return stock_symbol + ",stock_value"
+
+    if(os.environ.__contains__("FETCH_IP")):
+        message = ",".join(stock_symbol, userid)
+
+        #TODO: move to always open connection
+        reader, writer = await asyncio.open_connection(
+            os.environ["FETCH_IP"], os.environ["FETCH_PORT"])
+
+        print(f'Send: {message!r}')
+        writer.write(message.encode())
+        await writer.drain()
+
+        data = await reader.read(100)
+        print(f'Received: {data.decode()!r}')
+
+        print('Close the connection')
+        writer.close()
+        await writer.wait_closed()
+
+        data = data.decode()
+
+        return data
+
+    else:
+        return stock_symbol + ",stock_value"
 
 
 async def buy(userid, stock_symbol, amount):
@@ -157,7 +180,7 @@ async def main():
         print(os.environ["TRANSACTION_IP"])
         my_ip = os.environ["TRANSACTION_IP"]
     else:
-        my_ip = socket.getfqdn()
+        my_ip = "127.0.0.1"
 
     if os.environ.__contains__("TRANSACTION_PORT"):
         print(os.environ["TRANSACTION_PORT"])
@@ -166,7 +189,7 @@ async def main():
         my_port = 8889
 
     server = await asyncio.start_server(
-        handle_echo, my_ip, my_port)
+        handle_user_request, my_ip, my_port)
 
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     print(f'Serving on {addrs}', flush=True)
