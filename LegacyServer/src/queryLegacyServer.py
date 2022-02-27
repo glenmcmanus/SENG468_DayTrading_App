@@ -1,4 +1,4 @@
-git from subprocess import Popen, PIPE, run
+from subprocess import Popen, PIPE, run
 
 #This code is incomplete
 
