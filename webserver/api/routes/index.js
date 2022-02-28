@@ -3,6 +3,8 @@ var router = express.Router();
 const logger = require('morgan');
 const cors = require('cors');
 
+const CONST = require("../public/javascripts/constants");
+
 require('dotenv').config();
 const ip = process.env.WEBSERVER_IP;
 const port = process.env.WEB_PORT;
@@ -24,7 +26,7 @@ router.use(express.urlencoded({ extended: false }));
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  console.log("query:" + req.query);
+  console.log("ADD:" + CONST.ADD);
   res.render('index', { title: 'Express' });
 });
 
