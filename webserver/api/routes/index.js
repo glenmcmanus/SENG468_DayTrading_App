@@ -3,9 +3,17 @@ var router = express.Router();
 const logger = require('morgan');
 const cors = require('cors');
 
+require('dotenv').config();
+const ip = process.env.WEBSERVER_IP;
+const port = process.env.WEB_PORT;
+
 router.use(
   cors({
-    origin: 'http://localhost:9000',
+    //if(ip == null)
+    //    origin: 'http://localhost:9000',
+    //else
+    origin: ip + ':' + port,
+
     credentials: true,
   })
 );
@@ -16,6 +24,7 @@ router.use(express.urlencoded({ extended: false }));
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
+  console.log("query:" + req.query);
   res.render('index', { title: 'Express' });
 });
 
