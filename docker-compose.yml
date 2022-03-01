@@ -7,6 +7,8 @@ services:
     build:
       context: ./LegacyServer
       dockerfile: ./Dockerfile
+    depends_on:
+      - "router1"
     env_file:
       - .env
       - ./LegacyServer/legacy.env
@@ -15,13 +17,14 @@ services:
     networks:
       backend:
         ipv4_address: ${FETCH_IP}
-    #entrypoint: [ "ls" ]
 
   transaction_server:
     image: transaction_server
     build:
       context: .
       dockerfile: ./TransactionServer/Dockerfile
+    depends_on:
+      - "router1"
     env_file:
       - .env
       - ./TransactionServer/transaction.env
@@ -30,13 +33,14 @@ services:
     networks:
       backend:
         ipv4_address: ${TRANSACTION_IP}
-    #entrypoint: [ "python", "-m", "TransactionServer.src.transactionServer" ]
 
   web_server:
     image: webserver
     build:
       context: ./webserver
       dockerfile: ./Dockerfile
+    depends_on:
+      - "router1"
     env_file:
       - .env
       - ./webserver/webserver.env
@@ -48,177 +52,245 @@ services:
 
   #mongo routers
   router1:
-    image: mongo
+    image: mongo_router
+    build:
+      context: ./Mongo/Router
+      dockerfile: ./Dockerfile
     container_name: router1
     command: mongos --port 27017 --configdb config-srv/cfg_srv1:27017,cfg_srv2:27017,cfg_srv3:27017 --bind_ip_all
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "router2"
+    environment:
+      - PRIMARY=1
     ports:
-      - 27117:27017
+      - ${M_ROUTER1_PORT}:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: ${M_ROUTER1_IP}
     restart: always
 
   router2:
-    image: mongo
+    image: mongo_router
     container_name: router2
     command: mongos --port 27017 --configdb config-srv/cfg_srv1:27017,cfg_srv2:27017,cfg_srv3:27017 --bind_ip_all
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "shard1a"
+      - "shard2a"
+      - "shard3a"
+    environment:
+      - PRIMARY=0
     ports:
-      - 27118:27017
+      - ${M_ROUTER2_PORT}:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: ${M_ROUTER2_IP}
     restart: always
 
   #mongo Config Servers
   cfg_srv1:
-    image: mongo
+    image: mongo_cfg
+    build:
+      context: ./Mongo/Config
+      dockerfile: ./Dockerfile
     container_name: cfg_srv1
     command: mongod --port 27017 --configsvr --replSet config-srv
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv2"
+      - "cfg_srv3"
+    environment:
+      - PRIMARY=1
     ports:
       - 27119:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.7
     restart: always
 
   cfg_srv2:
-    image: mongo
+    image: mongo_cfg
     container_name: cfg_srv2
     command: mongod --port 27017 --configsvr --replSet config-srv
-    volumes:
-      - ./scripts:/scripts
+    environment:
+      - PRIMARY=0
     ports:
       - 27120:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.8
     restart: always
 
   cfg_srv3:
-    image: mongo
+    image: mongo_cfg
+    build:
+      context: ./Mongo/Config
+      dockerfile: ./Dockerfile
     container_name: cfg_srv3
     command: mongod --port 27017 --configsvr --replSet config-srv
-    volumes:
-      - ./scripts:/scripts
+    environment:
+      - PRIMARY=0
     ports:
       - 27121:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.9
     restart: always
 
   #mongo Shards
 
   #Shard1
   shard1a:
-    image: mongo
+    image: mongo_shard
+    build:
+      context: ./Mongo/Shard
+      dockerfile: ./Dockerfile
     container_name: shard1a
     command: mongod --port 27017 --shardsvr --replSet shard1
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+      - "shard1b"
+      - "shard1c"
+    environment:
+      - SHARD=shard1
+      - PRIMARY=1
     ports:
       - 27122:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.10
     restart: always
 
   shard1b:
-    image: mongo
+    image: mongo_shard
     container_name: shard1b
     command: mongod --port 27017 --shardsvr --replSet shard1
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+    environment:
+      - SHARD=shard1
+      - PRIMARY=0
     ports:
       - 27123:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.11
     restart: always
 
   shard1c:
-    image: mongo
+    image: mongo_shard
     container_name: shard1c
     command: mongod --port 27017 --shardsvr --replSet shard1
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+    environment:
+      - SHARD=shard1
+      - PRIMARY=0
     ports:
       - 27124:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.12
     restart: always
 
   #Shard2
   shard2a:
-    image: mongo
+    image: mongo_shard
     container_name: shard2a
     command: mongod --port 27017 --shardsvr --replSet shard2
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+      - "shard2b"
+      - "shard2c"
+    environment:
+      - SHARD=shard2
+      - PRIMARY=1
     ports:
       - 27125:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.13
     restart: always
 
   shard2b:
-    image: mongo
+    image: mongo_shard
     container_name: shard2b
     command: mongod --port 27017 --shardsvr --replSet shard2
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+    environment:
+      - SHARD=shard2
+      - PRIMARY=0
     ports:
       - 27126:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.14
     restart: always
 
   shard2c:
-    image: mongo
+    image: mongo_shard
     container_name: shard2c
     command: mongod --port 27017 --shardsvr --replSet shard2
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+    environment:
+      - SHARD=shard2
+      - PRIMARY=0
     ports:
       - 27127:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.15
     restart: always
 
   #Shard3
   shard3a:
-    image: mongo
+    image: mongo_shard
     container_name: shard3a
     command: mongod --port 27017 --shardsvr --replSet shard3
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+      - "shard3b"
+      - "shard3c"
+    environment:
+      - SHARD=shard3
+      - PRIMARY=1
     ports:
       - 27128:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.16
     restart: always
 
   shard3b:
-    image: mongo
+    image: mongo_shard
     container_name: shard3b
     command: mongod --port 27017 --shardsvr --replSet shard3
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+    environment:
+      - SHARD=shard3
+      - PRIMARY=0
     ports:
       - 27129:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.17
     restart: always
 
   shard3c:
-    image: mongo
+    image: mongo_shard
     container_name: shard3c
     command: mongod --port 27017 --shardsvr --replSet shard3
-    volumes:
-      - ./scripts:/scripts
+    depends_on:
+      - "cfg_srv1"
+    environment:
+      - SHARD=shard3
+      - PRIMARY=0
     ports:
       - 27130:27017
     networks:
-      - backend
+      backend:
+        ipv4_address: 10.5.0.18
     restart: always
 
 networks:
