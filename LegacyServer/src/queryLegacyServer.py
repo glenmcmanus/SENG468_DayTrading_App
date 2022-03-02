@@ -39,30 +39,28 @@ def process_request(stock_symbol, username):
 
 
 async def handle_request(reader, writer):
-    data = await reader.read(100)
+    while True:
+        data = await reader.read(100)
 
-    print(f"Received {data}", flush=True)
+        print(f"Received {data}", flush=True)
 
-    message = data.decode()
-    addr = writer.get_extra_info('peername')
+        message = data.decode()
+        addr = writer.get_extra_info('peername')
 
-    #todo: log request
+        #todo: log request
 
-    print(f"Received {message!r} from {addr!r}", flush=True)
+        print(f"Received {message!r} from {addr!r}", flush=True)
 
-    message = message.split(',')
+        message = message.split(',')
 
-    response = process_request(message[0], message[1])
-    log_request(response) 
+        response = process_request(message[0], message[1])
+        log_request(response)
 
-    print(f"Send: {response!r}")
-    writer.write(response.encode())
-    await writer.drain()
+        print(f"Send: {response!r}")
+        writer.write(response.encode())
+        await writer.drain()
 
-    # todo: log response
-
-    print("Close the connection")
-    writer.close()
+        # todo: log response
 
 
 async def service_loop():

@@ -8,26 +8,24 @@ db_client = pymongo.MongoClient(os.environ["M_ROUTER1_IP"], 27017)
 db = db_client.DayTrading
 
 async def handle_user_request(reader, writer):
-    data = await reader.read(100)
-    message = data.decode()
-    addr = writer.get_extra_info('peername')
+    while True:
+        data = await reader.read(100)
+        message = data.decode()
+        addr = writer.get_extra_info('peername')
 
-    print(f"Received {message!r} from {addr!r}", flush=True)
+        print(f"Received {message!r} from {addr!r}", flush=True)
 
-    message = message.split(',')
+        message = message.split(',')
 
-    message[0] = int(message[0])
+        message[0] = int(message[0])
 
-    response = await handle_request(message)
+        response = await handle_request(message)
 
-    response = message[1] + ',' + response;
+        response = message[1] + ',' + response
 
-    print(f"Send: {response!r}")
-    writer.write(response.encode())
-    await writer.drain()
-
-    print("Close the connection")
-    writer.close()
+        print(f"Send: {response!r}")
+        writer.write(response.encode())
+        await writer.drain()
 
 
 # TODO: check for malformed requests
@@ -63,7 +61,7 @@ async def handle_request(request):
         return await set_buy_amount(request[1], request[2], request[3])
 
     elif request[0] == Const.CANCEL_SET_BUY:
-        return await cancel_set_buy(request[1], request[2], request[3])
+        return await cancel_set_buy(request[1], request[2])
 
     elif request[0] == Const.SET_BUY_TRIGGER:
         return await set_buy_trigger(request[1], request[2], request[3])
@@ -149,80 +147,83 @@ async def buy(userid, stock_symbol, amount):
 
     user = db.Users.find_one({"UserID":userid})
 
-    #this is wrong, we need to commit buy.. oops!
-    if user["AccountBalance"] >= amount:
-        print("User ", userid, " buy $", amount, " of ", stock_symbol)
-        user = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
-        return userid + " confirm purchase of $" + amount + " of " + stock_symbol
-    else:
-        print("User ", userid, "insufficient funds, balance: ", user["AccountBalance"])
-        return userid + " insufficient funds; deny purchase of $" + amount + " of " + stock_symbol
+    print(f"DB user result: {user!r}")
 
+    #this is wrong, we need to commit buy.. oops!
+    #if user is not None and user["AccountBalance"] >= amount:
+    #    print("User ", userid, " buy $", amount, " of ", stock_symbol)
+    #    user = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
+    #    return userid + " confirm purchase of $" + amount + " of " + stock_symbol
+    #else:
+    #    print("User ", userid, "insufficient funds, balance: ", user["AccountBalance"])
+    #    return userid + " insufficient funds; deny purchase of $" + amount + " of " + stock_symbol
+
+    return "TODO: implement buy"
 
 async def commit_buy(userid):
     # check pending buy <= 60 seconds ago
     print("User ", userid, " committed buy command")
-    return userid + " committed buy command"
+    return "todo: implement commit buy"
 
 
 async def cancel_buy(userid):
     # check pending buy <= 60 seconds ago
     print("User ", userid, " cancelled their buy command")
-    return userid + " cancelled their buy command"
+    return "todo: implement cancel buy"
 
 
 async def sell(userid, stock_symbol, amount):
     # check stock amount >= sell amount
     print("User ", userid, " sell $", amount, " of ", stock_symbol)
-    return userid + " confirm sale of $" + amount + " of " + stock_symbol
+    return "todo: implement sell"
 
 
 async def commit_sell(userid):
     # check pending sell <= 60 seconds ago
     print("User ", userid, " committed sell command")
-    return userid + " committed sell command"
+    return "todo: implement commit sell"
 
 
 async def cancel_sell(userid):
     # check pending sell <= 60 seconds ago
     print("User ", userid, " cancelled sell command")
-    return userid + " cancelled sell command"
+    return "todo: implement cancel sell"
 
 
 async def set_buy_amount(userid, stock_symbol, amount):
     # check funds >= buy amount * stock price
     print("User ", userid, " auto buy ", stock_symbol, " up to quantity ", amount)
-    return userid + " set buy amount $" + amount + " for " + stock_symbol
+    return "todo: implement set buy amount"
 
 
 async def cancel_set_buy(userid, stock_symbol):
     # check existing "set buy" for stock
     print("User ", userid, " cancel auto purchase of ", stock_symbol)
-    return userid + " cancel auto purchase of " + stock_symbol
+    return "todo: implement cancel set buy"
 
 
 async def set_buy_trigger(userid, stock_symbol, amount):
     # check buy amount set
     print("User ", userid, " set trigger to purchase ", stock_symbol, " when price <= $", amount)
-    return userid + " trigger set for " + stock_symbol + " <= $" + amount
+    return "todo: implement set buy trigger"
 
 
 async def set_sell_amount(userid, stock_symbol, amount):
     # check stock quantity >= amount
     print("User ", userid, " auto sell ", stock_symbol, " up to quantity ", amount)
-    return userid + " sell up to $" + amount + " of " + stock_symbol
+    return "todo: implement set sell amount"
 
 
 async def set_sell_trigger(userid, stock_symbol, amount):
     # check sell amount set
     print("User ", userid, " set trigger to sell ", stock_symbol, " when price >= ", amount)
-    return userid + " set sell trigger for " + stock_symbol + " at $" + amount
+    return "todo: implement set sell trigger"
 
 
 async def cancel_set_sell(userid, stock_symbol):
     # check existing "set sell" for stock
     print("User ", userid, " cancel auto sale of ", stock_symbol)
-    return userid + " cancel auto sale of " + stock_symbol;
+    return "todo: implement cancel set sell"
 
 
 async def main():

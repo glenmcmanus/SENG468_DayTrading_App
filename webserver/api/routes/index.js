@@ -22,7 +22,6 @@ router.use(express.urlencoded({ extended: false }));
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  console.log("ADD:" + CONST.ADD);
   res.render('index', { title: 'Express' });
 });
 
