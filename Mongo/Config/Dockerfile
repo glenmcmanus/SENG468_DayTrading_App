@@ -2,6 +2,6 @@ FROM mongo
 
 WORKDIR /usr/db
 
-COPY ./init-config.* .
+COPY ./init-config.* ./
 
 CMD ./init-config.sh

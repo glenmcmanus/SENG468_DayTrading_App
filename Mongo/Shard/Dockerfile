@@ -2,6 +2,6 @@ FROM mongo
 
 WORKDIR /usr/db
 
-COPY ./init-shard.* .
+COPY ./init-shard.* ./
 
 CMD ./init-shard.sh
