@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 
+var fetch_client = require('../fetch_client.js')
+
 /* GET users listing. */
 router.get('/', function(req, res, next) {
  
@@ -14,6 +16,9 @@ router.post('/', (req, res) => {
   
 router.put('/', (req, res) => {
     console.log(req.body);
+
+    fetch_client.client.write(req.body["userID"] + ',' + req.body["stock"]);
+
     res.send();
 });
 

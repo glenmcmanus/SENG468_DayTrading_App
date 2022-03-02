@@ -8,9 +8,6 @@ import time
 db_client = pymongo.MongoClient(os.environ["M_ROUTER1_IP"], 27017)
 db = db_client.DayTrading
 
-fetch_reader, fetch_writer = await asyncio.open_connection(
-            os.environ["FETCH_IP"], os.environ["FETCH_PORT"])
-
 async def handle_user_request(reader, writer):
     data = await reader.read(100)
     message = data.decode()
@@ -128,7 +125,6 @@ async def add_funds(userid, amount):
     print("User ", userid, " add $", amount)
 
     res = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
-    pprint(res)
 
     if res.acknowledged:
         print("Add funds Ack")
@@ -139,6 +135,8 @@ async def add_funds(userid, amount):
 
 
 async def quote(userid, stock_symbol):
+    global fetch_reader, fetch_writer
+
     print("User ", userid, " get quote for ", stock_symbol)
 
     message = ",".join(stock_symbol, userid)
@@ -165,8 +163,6 @@ async def buy(userid, stock_symbol, amount):
 
     #this is wrong, we need to commit buy.. oops!
     if user["AccountBalance"] >= amount:
-
-
         print("User ", userid, " buy $", amount, " of ", stock_symbol)
         user = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
         return userid + " confirm purchase of $" + amount + " of " + stock_symbol
@@ -254,7 +250,6 @@ async def main():
         my_port = os.environ["TRANSACTION_PORT"]
     else:
         my_port = 8889
-
 
     server = await asyncio.start_server(
         handle_user_request, my_ip, my_port)

@@ -78,6 +78,8 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+//mongo
 mgdb.connectDB();
+
 
 module.exports = app;
