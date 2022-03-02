@@ -1,5 +1,3 @@
-#!/bin/bash
-
 echo $'\n\nPropping up cluster...\n\n'
 docker-compose up -d
 
