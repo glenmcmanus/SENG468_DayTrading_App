@@ -13,6 +13,7 @@ from subprocess import Popen, PIPE, run
 def log_request(response):
     #eventually must write to DB
     f = open("queryLogFile.txt", "a")
+    f.write("eventQuery\n")
     f.write(str(time.time()))
     f.write("server-0") #TODO
     f.write("0") #TODO

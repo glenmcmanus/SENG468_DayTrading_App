@@ -86,8 +86,9 @@ async def handle_request(request):
 def log_command(request):
     f = open("transactionLogFile.txt", "a")
     #log in the UserCommandType format
+    f.write("eventCommand\n")
     f.write(str(time.time()) + "\n")
-    f.write("server0\n")
+    f.write("server-0\n")
     f.write("0\n")
     f.write(request[0] + "\n")
     f.write(request[1] + "\n")
@@ -105,8 +106,9 @@ def log_command(request):
 def log_error(request):
     f = open("transactionLogFile.txt", "a")
     #log in the ErrorEventType format
+    f.write("eventError\n")
     f.write(str(time.time()) + "\n")
-    f.write("server0\n")
+    f.write("server-0\n")
     f.write("0\n")
     f.write(request[0] + "\n")
     f.write(request[1] + "\n")
