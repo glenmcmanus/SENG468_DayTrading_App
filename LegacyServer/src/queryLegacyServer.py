@@ -14,8 +14,8 @@ def log_request(response):
     #eventually must write to DB
     f = open("queryLogFile.txt", "a")
     f.write(str(time.time()))
-    f.write("server") #TODO
-    f.write("transaction num") #TODO
+    f.write("server-0") #TODO
+    f.write("0") #TODO
     f.write(response[0] + "\n")
     f.write(response[1] + "\n")
     f.write(response[2] + "\n")
