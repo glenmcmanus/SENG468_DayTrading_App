@@ -1,6 +1,14 @@
 import asyncio
 import os
 import Common.src.Constants as Const
+import pymongo
+import pprint
+
+db_client = pymongo.MongoClient(os.environ["M_ROUTER1_IP"], 27017)
+db = db_client.DayTrading
+
+fetch_reader, fetch_writer = await asyncio.open_connection(
+            os.environ["FETCH_IP"], os.environ["FETCH_PORT"])
 
 async def handle_user_request(reader, writer):
     data = await reader.read(100)
@@ -70,42 +78,53 @@ async def handle_request(request):
 
 async def add_funds(userid, amount):
     print("User ", userid, " add $", amount)
+
+    res = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
+    pprint(res)
+
+    if res.acknowledged:
+        print("Add funds Ack")
+    else:
+        print("Add funds no ack")
+
     return "Added funds"
 
 
 async def quote(userid, stock_symbol):
     print("User ", userid, " get quote for ", stock_symbol)
 
-    if(os.environ.__contains__("FETCH_IP")):
-        message = ",".join(stock_symbol, userid)
+    message = ",".join(stock_symbol, userid)
 
-        #TODO: move to always open connection
-        reader, writer = await asyncio.open_connection(
-            os.environ["FETCH_IP"], os.environ["FETCH_PORT"])
+    print(f'Send: {message!r}')
+    fetch_writer.write(message.encode())
+    await fetch_writer.drain()
 
-        print(f'Send: {message!r}')
-        writer.write(message.encode())
-        await writer.drain()
+    data = await fetch_reader.read(100)
+    print(f'Received: {data.decode()!r}')
 
-        data = await reader.read(100)
-        print(f'Received: {data.decode()!r}')
+    print('Close the connection')
+    fetch_writer.close()
+    await fetch_writer.wait_closed()
 
-        print('Close the connection')
-        writer.close()
-        await writer.wait_closed()
+    data = data.decode()
 
-        data = data.decode()
-
-        return data
-
-    else:
-        return stock_symbol + ",stock_value"
+    return data
 
 
 async def buy(userid, stock_symbol, amount):
-    # check funds >= amount
-    print("User ", userid, " buy $", amount, " of ", stock_symbol)
-    return userid + " confirm purchase of $" + amount + " of " + stock_symbol
+
+    user = db.Users.find_one({"UserID":userid})
+
+    #this is wrong, we need to commit buy.. oops!
+    if user["AccountBalance"] >= amount:
+
+
+        print("User ", userid, " buy $", amount, " of ", stock_symbol)
+        user = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
+        return userid + " confirm purchase of $" + amount + " of " + stock_symbol
+    else:
+        print("User ", userid, "insufficient funds, balance: ", user["AccountBalance"])
+        return userid + " insufficient funds; deny purchase of $" + amount + " of " + stock_symbol
 
 
 async def commit_buy(userid):
@@ -187,6 +206,7 @@ async def main():
         my_port = os.environ["TRANSACTION_PORT"]
     else:
         my_port = 8889
+
 
     server = await asyncio.start_server(
         handle_user_request, my_ip, my_port)

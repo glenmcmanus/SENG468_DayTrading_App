@@ -10,7 +10,7 @@ WORKDIR /usr/transaction
 #COPY requirements.txt .
 
 # install dependencies
-#RUN pip install -r requirements.txt
+RUN pip install pymongo
 
 # copy the content of the local src directory to the working directory
 
