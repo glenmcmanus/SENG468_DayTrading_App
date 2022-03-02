@@ -90,6 +90,10 @@ async def add_funds(userid, amount):
     return "Added funds"
 
 
+def log_add_funds():
+    pass
+
+
 async def quote(userid, stock_symbol):
     print("User ", userid, " get quote for ", stock_symbol)
 
@@ -111,6 +115,10 @@ async def quote(userid, stock_symbol):
     return data
 
 
+def log_quote():
+    pass
+
+
 async def buy(userid, stock_symbol, amount):
 
     user = db.Users.find_one({"UserID":userid})
@@ -127,10 +135,18 @@ async def buy(userid, stock_symbol, amount):
         return userid + " insufficient funds; deny purchase of $" + amount + " of " + stock_symbol
 
 
+def log_buy():
+    pass
+
+
 async def commit_buy(userid):
     # check pending buy <= 60 seconds ago
     print("User ", userid, " committed buy command")
     return userid + " committed buy command"
+
+
+def log_commit_buy():
+    pass
 
 
 async def cancel_buy(userid):
@@ -139,10 +155,18 @@ async def cancel_buy(userid):
     return userid + " cancelled their buy command"
 
 
+def log_cancel_buy():
+    pass
+
+
 async def sell(userid, stock_symbol, amount):
     # check stock amount >= sell amount
     print("User ", userid, " sell $", amount, " of ", stock_symbol)
     return userid + " confirm sale of $" + amount + " of " + stock_symbol
+
+
+def log_sell():
+    pass
 
 
 async def commit_sell(userid):
@@ -151,10 +175,18 @@ async def commit_sell(userid):
     return userid + " committed sell command"
 
 
+def log_commit_sell():
+    pass
+
+
 async def cancel_sell(userid):
     # check pending sell <= 60 seconds ago
     print("User ", userid, " cancelled sell command")
     return userid + " cancelled sell command"
+
+
+def log_cancel_sell():
+    pass
 
 
 async def set_buy_amount(userid, stock_symbol, amount):
@@ -163,10 +195,18 @@ async def set_buy_amount(userid, stock_symbol, amount):
     return userid + " set buy amount $" + amount + " for " + stock_symbol
 
 
+def log_set_buy_amount():
+    pass
+
+
 async def cancel_set_buy(userid, stock_symbol):
     # check existing "set buy" for stock
     print("User ", userid, " cancel auto purchase of ", stock_symbol)
     return userid + " cancel auto purchase of " + stock_symbol
+
+
+def log_cancel_set_buy():
+    pass
 
 
 async def set_buy_trigger(userid, stock_symbol, amount):
@@ -175,10 +215,18 @@ async def set_buy_trigger(userid, stock_symbol, amount):
     return userid + " trigger set for " + stock_symbol + " <= $" + amount
 
 
+def log_set_buy_trigger():
+    pass
+
+
 async def set_sell_amount(userid, stock_symbol, amount):
     # check stock quantity >= amount
     print("User ", userid, " auto sell ", stock_symbol, " up to quantity ", amount)
     return userid + " sell up to $" + amount + " of " + stock_symbol
+
+
+def log_set_sell_amount():
+    pass
 
 
 async def set_sell_trigger(userid, stock_symbol, amount):
@@ -187,10 +235,18 @@ async def set_sell_trigger(userid, stock_symbol, amount):
     return userid + " set sell trigger for " + stock_symbol + " at $" + amount
 
 
+def log_set_sell_trigger():
+    pass
+
+
 async def cancel_set_sell(userid, stock_symbol):
     # check existing "set sell" for stock
     print("User ", userid, " cancel auto sale of ", stock_symbol)
     return userid + " cancel auto sale of " + stock_symbol;
+
+
+def log_cancel_set_sell():
+    pass
 
 
 async def main():
