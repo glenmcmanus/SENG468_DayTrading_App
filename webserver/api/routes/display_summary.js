@@ -12,7 +12,7 @@ router.post('/', (req, res) => {
   
 router.put('/', (req, res) => {
     console.log(req.body);
-    res.send();
+    res.send("Summary for " + req.body['userID']);
 });
 
 module.exports = router;

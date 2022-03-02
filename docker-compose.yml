@@ -41,6 +41,8 @@ services:
       dockerfile: ./Dockerfile
     depends_on:
       - "router1"
+      - "fetch_server"
+      - "transaction_server"
     env_file:
       - .env
       - ./webserver/webserver.env

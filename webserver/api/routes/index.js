@@ -26,10 +26,6 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-//router.get('/QUOTE', function(req, res) {
-//    fetch_client.write(req.params["userid"] + ',' + req.params["StockSymbol"]);
-//});
-
 router.post('/', (req, res) => {
   res.send('Got a POST request')
 })

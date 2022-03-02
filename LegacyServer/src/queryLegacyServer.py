@@ -34,17 +34,21 @@ async def query_server(stock_symbol, username):
 
 def process_request(stock_symbol, username):
     query_string = query_server(stock_symbol, username)
-    return query_string.split(",")
+    print("Response: ", query_string)
+    return query_string.split(" ")
 
 
 async def handle_request(reader, writer):
     data = await reader.read(100)
+
+    print(f"Received {data}", flush=True)
+
     message = data.decode()
     addr = writer.get_extra_info('peername')
 
     #todo: log request
 
-    print(f"Received {message!r} from {addr!r}")
+    print(f"Received {message!r} from {addr!r}", flush=True)
 
     message = message.split(',')
 

@@ -5,6 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require("cors");
 var mgdb = require('./db.js');
+var transaction_client = require('./transaction_client.js');
+var fetch_client = require('./fetch_client.js')
 
 var indexRouter = require('./routes/index');
 var addRouter = require('./routes/add');
@@ -78,8 +80,9 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-//mongo
+//service connections
 mgdb.connectDB();
-
+transaction_client.connect();
+fetch_client.connect();
 
 module.exports = app;

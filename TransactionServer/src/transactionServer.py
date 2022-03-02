@@ -2,7 +2,6 @@ import asyncio
 import os
 import Common.src.Constants as Const
 import pymongo
-import pprint
 import time
 
 db_client = pymongo.MongoClient(os.environ["M_ROUTER1_IP"], 27017)
@@ -13,13 +12,15 @@ async def handle_user_request(reader, writer):
     message = data.decode()
     addr = writer.get_extra_info('peername')
 
-    print(f"Received {message!r} from {addr!r}")
+    print(f"Received {message!r} from {addr!r}", flush=True)
 
     message = message.split(',')
 
     message[0] = int(message[0])
 
     response = await handle_request(message)
+
+    response = message[1] + ',' + response;
 
     print(f"Send: {response!r}")
     writer.write(response.encode())
@@ -40,8 +41,8 @@ async def handle_request(request):
     if request[0] == Const.ADD:
         return await add_funds(request[1], request[2])
 
-    elif request[0] == Const.QUOTE:
-        return await quote(request[1], request[2])
+   # elif request[0] == Const.QUOTE:
+   #     return await quote(request[1], request[2])
 
     elif request[0] == Const.BUY:
         return await buy(request[1], request[2], request[3])
@@ -95,7 +96,7 @@ def log_command(request):
         f.write("NONE\n")
     f.write("filename\n")
     if request[0] == Const.ADD:
-        f.write(str(request[2] + "\n\n")
+        f.write(str(request[2] + "\n\n"))
     else:
         f.write("NONE\n\n")
     f.close()
@@ -115,46 +116,33 @@ def log_error(request):
         f.write("NONE\n")
     f.write("filename\n")
     if request[0] == Const.ADD:
-        f.write(str(request[2] + "\n")
+        f.write(str(request[2] + "\n"))
     else:
         f.write("NONE\n")
-    f.write("ERROR: Unexpected command\n\n"
+    f.write("ERROR: Unexpected command\n\n")
 
 
 async def add_funds(userid, amount):
     print("User ", userid, " add $", amount)
 
     res = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
+    print(res, flush=True)
 
+    result = userid
     if res.acknowledged:
         print("Add funds Ack")
+        return "Add success"
     else:
         print("Add funds no ack")
-
-    return "Added funds"
+        return "Add fail"
 
 
 async def quote(userid, stock_symbol):
     global fetch_reader, fetch_writer
 
-    print("User ", userid, " get quote for ", stock_symbol)
 
-    message = ",".join(stock_symbol, userid)
-
-    print(f'Send: {message!r}')
-    fetch_writer.write(message.encode())
-    await fetch_writer.drain()
-
-    data = await fetch_reader.read(100)
-    print(f'Received: {data.decode()!r}')
-
-    print('Close the connection')
-    fetch_writer.close()
-    await fetch_writer.wait_closed()
-
-    data = data.decode()
-
-    return data
+def log_add_funds():
+    pass
 
 
 async def buy(userid, stock_symbol, amount):
@@ -250,6 +238,10 @@ async def main():
         my_port = os.environ["TRANSACTION_PORT"]
     else:
         my_port = 8889
+
+   # global fetch_reader, fetch_writer
+   # fetch_reader, fetch_writer = asyncio.open_connection(
+   #         os.environ["FETCH_IP"], os.environ["FETCH_PORT"])
 
     server = await asyncio.start_server(
         handle_user_request, my_ip, my_port)

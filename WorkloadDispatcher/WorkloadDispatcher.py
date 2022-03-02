@@ -1,3 +1,4 @@
+import json
 import requests
 import sys
 
@@ -76,7 +77,7 @@ def main():
             data['value']=line[3]
             
         print(req_str)
-        print(data )
+        print(data)
         res = requests.put(req_str, json=data)
         print('closing connection')
         res.close()
