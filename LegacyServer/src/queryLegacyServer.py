@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 from subprocess import Popen, PIPE, run
 
 #This code is incomplete
@@ -8,6 +9,19 @@ from subprocess import Popen, PIPE, run
 #receive input from transaction server
 #reformat ouput in some way
 #send output to transaction server (possibly a different file)
+
+def log_request(response):
+    #eventually must write to DB
+    f = open("queryLogFile.txt", "w")
+    f.write(str(time.time()))
+    f.write("server") #TODO
+    f.write("transaction num") #TODO
+    f.write(response[0] + "\n")
+    f.write(response[1] + "\n")
+    f.write(response[2] + "\n")
+    f.write(response[3] + "\n")
+    f.write(response[4] + "\n")
+	
 
 
 async def query_server(stock_symbol, username):
@@ -34,6 +48,7 @@ async def handle_request(reader, writer):
     message = message.split(',')
 
     response = process_request(message[0], message[1])
+    log_request(response) 
 
     print(f"Send: {response!r}")
     writer.write(response.encode())
