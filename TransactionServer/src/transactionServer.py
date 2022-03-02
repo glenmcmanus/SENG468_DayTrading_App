@@ -3,6 +3,7 @@ import os
 import Common.src.Constants as Const
 import pymongo
 import pprint
+import time
 
 db_client = pymongo.MongoClient(os.environ["M_ROUTER1_IP"], 27017)
 db = db_client.DayTrading
@@ -33,6 +34,12 @@ async def handle_user_request(reader, writer):
 
 # TODO: check for malformed requests
 async def handle_request(request):
+    
+    log_command(request)
+#request[0] = command
+#request[1] = userid
+#request[2] = funds/stocksymbol
+#request[3] = amount
     if request[0] == Const.ADD:
         return await add_funds(request[1], request[2])
 
@@ -73,7 +80,46 @@ async def handle_request(request):
         return await cancel_set_sell(request[1], request[2])
 
     else:
+        log_error(request)
         return "Unexpected request: " + str(request[0])
+
+def log_command(request):
+    f = open("transactionLogFile.txt", "a")
+    #log in the UserCommandType format
+    f.write(str(time.time()) + "\n")
+    f.write("server0\n")
+    f.write("0\n")
+    f.write(request[0] + "\n")
+    f.write(request[1] + "\n")
+    if request[0] == Const.BUY or request[0] == Const.SELL or request[0] == Const.SET_BUY_AMOUNT or request[0] == Const.CANCEL_SET_BUY or request[0] == Const.SET_BUY_TRIGGER or request[0] == Const.SET_SELL_AMOUNT or request[0] == Const.SET_SELL_TRIGGER or Const.CANCEL_SET_SELL:
+        f.write(request[2] + "\n")
+    else:
+        f.write("NONE\n")
+    f.write("filename\n")
+    if request[0] == Const.ADD:
+        f.write(str(request[2] + "\n\n")
+    else:
+        f.write("NONE\n\n")
+    f.close()
+
+def log_error(request):
+    f = open("transactionLogFile.txt", "a")
+    #log in the ErrorEventType format
+    f.write(str(time.time()) + "\n")
+    f.write("server0\n")
+    f.write("0\n")
+    f.write(request[0] + "\n")
+    f.write(request[1] + "\n")
+    if request[0] == Const.BUY or request[0] == Const.SELL or request[0] == Const.SET_BUY_AMOUNT or request[0] == Const.CANCEL_SET_BUY or request[0] == Const.SET_BUY_TRIGGER or request[0] == Const.SET_SELL_AMOUNT or request[0] == Const.SET_SELL_TRIGGER or Const.CANCEL_SET_SELL:
+        f.write(request[2] + "\n")
+    else:
+        f.write("NONE\n")
+    f.write("filename\n")
+    if request[0] == Const.ADD:
+        f.write(str(request[2] + "\n")
+    else:
+        f.write("NONE\n")
+    f.write("ERROR: Unexpected command\n\n"
 
 
 async def add_funds(userid, amount):
@@ -88,10 +134,6 @@ async def add_funds(userid, amount):
         print("Add funds no ack")
 
     return "Added funds"
-
-
-def log_add_funds():
-    pass
 
 
 async def quote(userid, stock_symbol):
@@ -115,10 +157,6 @@ async def quote(userid, stock_symbol):
     return data
 
 
-def log_quote():
-    pass
-
-
 async def buy(userid, stock_symbol, amount):
 
     user = db.Users.find_one({"UserID":userid})
@@ -135,18 +173,10 @@ async def buy(userid, stock_symbol, amount):
         return userid + " insufficient funds; deny purchase of $" + amount + " of " + stock_symbol
 
 
-def log_buy():
-    pass
-
-
 async def commit_buy(userid):
     # check pending buy <= 60 seconds ago
     print("User ", userid, " committed buy command")
     return userid + " committed buy command"
-
-
-def log_commit_buy():
-    pass
 
 
 async def cancel_buy(userid):
@@ -155,18 +185,10 @@ async def cancel_buy(userid):
     return userid + " cancelled their buy command"
 
 
-def log_cancel_buy():
-    pass
-
-
 async def sell(userid, stock_symbol, amount):
     # check stock amount >= sell amount
     print("User ", userid, " sell $", amount, " of ", stock_symbol)
     return userid + " confirm sale of $" + amount + " of " + stock_symbol
-
-
-def log_sell():
-    pass
 
 
 async def commit_sell(userid):
@@ -175,18 +197,10 @@ async def commit_sell(userid):
     return userid + " committed sell command"
 
 
-def log_commit_sell():
-    pass
-
-
 async def cancel_sell(userid):
     # check pending sell <= 60 seconds ago
     print("User ", userid, " cancelled sell command")
     return userid + " cancelled sell command"
-
-
-def log_cancel_sell():
-    pass
 
 
 async def set_buy_amount(userid, stock_symbol, amount):
@@ -195,18 +209,10 @@ async def set_buy_amount(userid, stock_symbol, amount):
     return userid + " set buy amount $" + amount + " for " + stock_symbol
 
 
-def log_set_buy_amount():
-    pass
-
-
 async def cancel_set_buy(userid, stock_symbol):
     # check existing "set buy" for stock
     print("User ", userid, " cancel auto purchase of ", stock_symbol)
     return userid + " cancel auto purchase of " + stock_symbol
-
-
-def log_cancel_set_buy():
-    pass
 
 
 async def set_buy_trigger(userid, stock_symbol, amount):
@@ -215,18 +221,10 @@ async def set_buy_trigger(userid, stock_symbol, amount):
     return userid + " trigger set for " + stock_symbol + " <= $" + amount
 
 
-def log_set_buy_trigger():
-    pass
-
-
 async def set_sell_amount(userid, stock_symbol, amount):
     # check stock quantity >= amount
     print("User ", userid, " auto sell ", stock_symbol, " up to quantity ", amount)
     return userid + " sell up to $" + amount + " of " + stock_symbol
-
-
-def log_set_sell_amount():
-    pass
 
 
 async def set_sell_trigger(userid, stock_symbol, amount):
@@ -235,18 +233,10 @@ async def set_sell_trigger(userid, stock_symbol, amount):
     return userid + " set sell trigger for " + stock_symbol + " at $" + amount
 
 
-def log_set_sell_trigger():
-    pass
-
-
 async def cancel_set_sell(userid, stock_symbol):
     # check existing "set sell" for stock
     print("User ", userid, " cancel auto sale of ", stock_symbol)
     return userid + " cancel auto sale of " + stock_symbol;
-
-
-def log_cancel_set_sell():
-    pass
 
 
 async def main():
