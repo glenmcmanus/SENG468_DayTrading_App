@@ -19,9 +19,17 @@ transaction_client.on('data', function(data) {
 });
 
 function enqueue(userid, query, res) {
+    console.log("enqueue");
+
+    console.log("Send query: " + query);
     transaction_buffer[userid] = res;
     transaction_client.write(query);
 }
 
+function baz() {
+    console.log("baz");
+}
+
 exports.connect = connect;
 exports.enqueue = enqueue;
+exports.baz = baz;

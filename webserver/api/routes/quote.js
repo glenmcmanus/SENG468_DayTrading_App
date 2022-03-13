@@ -1,3 +1,5 @@
+const CONST = require("../public/javascripts/constants");
+
 var express = require('express');
 var router = express.Router();
 var fetch_client = require('../fetch_client.js')

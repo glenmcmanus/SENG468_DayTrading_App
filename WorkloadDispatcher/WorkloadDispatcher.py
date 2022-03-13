@@ -35,13 +35,23 @@ def main():
         print("You need to pass in the file for dispatch")
         return
 
+    print(requests.get('http://localhost:9000/DEBUG_DROP', timeout=1000))
+
     f = open(sys.argv[1])
+
+    users = []
 
     for line in f:
         line = line.split(' ')[1].split(',')
 
         print("line after split: ", line)
         req_str = 'http://localhost:9000/' + line[0].lower()
+
+        if len(line) > 1:
+            if line[1] not in users:
+                users.append(line[1])
+                register = 'http://localhost:9000/REGISTER?userID=' + line[1]
+                requests.get(register, timeout=1000)
 
         if line[0] == 'DUMPLOG':
             data['command']=line[0]

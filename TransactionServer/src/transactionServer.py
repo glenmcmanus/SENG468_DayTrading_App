@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import os
 import Common.src.Constants as Const
 import pymongo
@@ -38,9 +39,6 @@ async def handle_request(request):
 #request[3] = amount
     if request[0] == Const.ADD:
         return await add_funds(request[1], request[2])
-
-   # elif request[0] == Const.QUOTE:
-   #     return await quote(request[1], request[2])
 
     elif request[0] == Const.BUY:
         return await buy(request[1], request[2], request[3])
@@ -144,21 +142,31 @@ def log_add_funds():
 
 
 async def buy(userid, stock_symbol, amount):
+    print(db.list_collection_names())
+    print(list(db.User.find()))
 
-    user = db.Users.find_one({"UserID":userid})
+    user = db['User'].find_one({"UserID":userid})
 
-    print(f"DB user result: {user!r}")
+    print(f"DB user result: {user!r}", flush=True)
 
-    #this is wrong, we need to commit buy.. oops!
-    #if user is not None and user["AccountBalance"] >= amount:
-    #    print("User ", userid, " buy $", amount, " of ", stock_symbol)
-    #    user = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
-    #    return userid + " confirm purchase of $" + amount + " of " + stock_symbol
-    #else:
-    #    print("User ", userid, "insufficient funds, balance: ", user["AccountBalance"])
-    #    return userid + " insufficient funds; deny purchase of $" + amount + " of " + stock_symbol
+    amount = float(amount)
 
-    return "TODO: implement buy"
+    if user is not None:
+        if user["AccountBalance"] >= amount:
+            print("User ", userid, " buy $", amount, " of ", stock_symbol, flush=True)
+            timestamp = datetime.datetime.utcnow()
+            user = db['User'].update_one({"UserID": userid}, {"$set": {"PendingBuy": {"Timestamp": timestamp,
+                                                                                    "Stock": stock_symbol,
+                                                                                    "Amount": amount}}})
+            return "ok"
+        else:
+            print("User ", userid, " non-sufficient funds (NSF)", flush=True)
+            return "NSF"
+    else:
+        print("User ", userid, " not found!", flush=True)
+        return "invalid user"
+
+    return "unhandled error"
 
 async def commit_buy(userid):
     # check pending buy <= 60 seconds ago

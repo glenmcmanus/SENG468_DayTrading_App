@@ -9,6 +9,9 @@ require('dotenv').config();
 const ip = process.env.WEBSERVER_IP;
 const port = process.env.WEB_PORT;
 
+let mgdb =  require('../db.js');
+
+
 router.use(
   cors({
     origin: ip + ':' + port,
@@ -23,6 +26,18 @@ router.use(express.urlencoded({ extended: false }));
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
+});
+
+router.get('/REGISTER', async function(req, res) {
+    console.log("register user " + req.query['userID']);
+    var response = await mgdb.register(req.query['userID']);
+    console.log(response);
+    res.send(response);
+});
+
+router.get('/DEBUG_DROP', async function(req, res) {
+    await mgdb.dropAll();
+    res.send("Collections dropped.");
 });
 
 router.post('/', (req, res) => {
@@ -43,6 +58,7 @@ router.get('/api/searchTerm', function(req, res) {
   console.log('Search term : ', JSON.stringify(stocks));
   res.end(JSON.stringify(stocks));
 });
+
 
 router.post('/api/searchTerm', function(req, res) {
   let stockSearch = req.body.stock;

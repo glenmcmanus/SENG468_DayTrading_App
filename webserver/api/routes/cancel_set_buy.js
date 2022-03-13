@@ -1,3 +1,5 @@
+const CONST = require("../public/javascripts/constants");
+
 var express = require('express');
 var router = express.Router();
 var transaction_client = require('../transaction_client.js');

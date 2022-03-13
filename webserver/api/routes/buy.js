@@ -1,3 +1,5 @@
+const CONST = require("../public/javascripts/constants");
+
 var express = require('express');
 var router = express.Router();
 var transaction_client = require('../transaction_client.js');
@@ -13,9 +15,14 @@ router.post('/', (req, res) => {
 });
   
 router.put('/', (req, res) => {
-    console.log(req.body);
+    transaction_client.baz();
 
-    const query = CONST.BUY + ',' + req.body['userID'] + ',' + req.body['stock'] + ',' + req.body['amount'];
+    console.log("put: " + JSON.stringify(req.body));
+
+    const query = CONST.BUY + ',' + req.body['userID'] + ',' + req.body['stock'] + ',' + req.body['value'];
+
+    console.log("query: " + query);
+
     transaction_client.enqueue(req.body['userID'], query, res);
 });
 

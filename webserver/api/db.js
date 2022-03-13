@@ -10,6 +10,18 @@ const connectionParams = {
 
 const logObject = { name: "Company Inc", address: "Highway 37" };
 
+const userSchema = new mongoose.Schema({UserID: String,
+                              FirstName: String,
+                              LastName: String,
+                              AccountBalance: Number,
+                              Email: String,
+                              Password: String,
+                              PhoneNumber: String,
+                              AccessToken: String,
+                              PendingBuy: {},
+                              PendingSell: {}});
+var User = null;
+
 function connectDB () {
 
     console.log("Attempt connection to " + url);
@@ -18,6 +30,7 @@ function connectDB () {
     .connect(url, connectionParams)
     .then(() => {
       console.log("Connected to database ");
+      User = mongoose.model('User', userSchema, 'User');
     })
     .catch((err) => {
       console.error(`Error connecting to the database. \n${err}`);
@@ -26,4 +39,32 @@ function connectDB () {
     });
 }
 
+async function register(userid) {
+    const existence = await User.find({UserID:userid});
+    if(existence.length > 0)
+        return "User exists";
+
+    const user = new User({UserID: userid, AccountBalance:0.00});
+
+    console.log("Pre-save " + userid + ":\n\n" + JSON.stringify(user));
+
+    user.save(function (err) {
+      if (err)
+        console.log(err);
+    });
+
+    //User.create({UserID: userid}, (error, doc) => {
+    //    console.log(error);
+    //});
+
+    return "User registered";
+}
+
+async function dropAll() {
+    if(User != null)
+        await User.deleteMany({});
+}
+
+exports.dropAll = dropAll;
 exports.connectDB = connectDB;
+exports.register = register;
