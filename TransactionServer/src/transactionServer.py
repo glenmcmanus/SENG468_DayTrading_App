@@ -31,7 +31,6 @@ async def handle_user_request(reader, writer):
 
 # TODO: check for malformed requests
 async def handle_request(request):
-    
     log_command(request)
 #request[0] = command
 #request[1] = userid
@@ -84,7 +83,7 @@ def log_command(request):
     f.write(str(time.time()) + "\n")
     f.write("server-0\n")
     f.write("0\n")
-    f.write(request[0] + "\n")
+    f.write(str(request[0]) + "\n")
     f.write(request[1] + "\n")
     if request[0] == Const.BUY or request[0] == Const.SELL or request[0] == Const.SET_BUY_AMOUNT or request[0] == Const.CANCEL_SET_BUY or request[0] == Const.SET_BUY_TRIGGER or request[0] == Const.SET_SELL_AMOUNT or request[0] == Const.SET_SELL_TRIGGER or Const.CANCEL_SET_SELL:
         f.write(request[2] + "\n")
