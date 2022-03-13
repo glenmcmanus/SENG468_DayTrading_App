@@ -9,16 +9,16 @@ require('dotenv').config();
 const ip = process.env.WEBSERVER_IP;
 const port = process.env.WEB_PORT;
 
-router.use(
+/*router.use(
   cors({
-    //if(ip == null)
-    //    origin: 'http://localhost:9000',
-    //else
+    if(ip == null)
+        origin: 'http://localhost:9000',
+    else
     origin: ip + ':' + port,
 
     credentials: true,
   })
-);
+);*/
 
 router.use(logger('dev'));
 router.use(express.json());
@@ -26,8 +26,7 @@ router.use(express.urlencoded({ extended: false }));
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  console.log("ADD:" + CONST.ADD);
-  res.render('index', { title: 'Express' });
+   
 });
 
 router.post('/', (req, res) => {
@@ -42,11 +41,13 @@ router.delete('/user', (req, res) => {
   res.send('Got a DELETE request at /user')
 })
 
-router.get('/api/searchTerm', function(req, res) {
-  console.log('search term');
-  res.writeHead(200, {
+router.get('/quote', function(req, res) {
+  console.log(req);
+   
+  //res.render('index', { title: 'QUOTE' });
+  /*res.writeHead(200, {
     'Content-Type': 'application/json',
-  });
+  });*/
   console.log('Search term : ', JSON.stringify(stocks));
   res.end(JSON.stringify(stocks));
 });

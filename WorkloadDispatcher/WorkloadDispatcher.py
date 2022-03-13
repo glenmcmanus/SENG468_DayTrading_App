@@ -21,6 +21,14 @@ query_param_definition = {
 
 }
 
+data={}
+data['transactionNum'] = ""
+data['command'] = ""
+data['userID'] = ""
+data['value'] = ""
+data['stock'] = ""
+data['filename'] = ""
+
 def main():
     if len(sys.argv) < 2:
         print("You need to pass in the file for dispatch")
@@ -32,29 +40,46 @@ def main():
         line = line.split(' ')[1].split(',')
 
         print("line after split: ", line)
-
-        req_str = 'http://localhost:9000/' + line[0] + '?'
+        req_str = 'http://localhost:9000/' + line[0].lower()
 
         if line[0] == 'DUMPLOG':
-            if len(line) == 2:
-                #do req for all
-                print('dumplog output: ', line[1])
-            elif len(line) == 3:
-                print('dumplog for user', line[1], ' output: ', line[2])
-                req_str += '&userid' + line[1]
+            data['command']=line[0]
+            data['value'] = ""
+            data['stock'] = ""
+            if len(line) == 3:
+                data['userID']=line[1]
+                data['filename']=line[2]
             else:
-                print('malformed dumplog request')
-        else:
-            param_names = query_param_definition[line[0]]
-            line = line[1:]
-            for i in range(0, len(line)):
-                req_str += param_names[i] + '=' + line[i] + '&'
-
-            req_str = req_str.rstrip('&')
-
-            print(req_str)
-
-        r = requests.get(req_str)
+                data['filename']=line[1]
+                data['userID'] = ""
+                data['value'] = ""
+                data['stock'] = ""
+        elif len(line) == 2:
+            data['command']=line[0]
+            data['userID']=line[1]
+            data['value'] = ""
+            data['stock'] = ""
+            data['filename']=""
+        elif len(line) == 3:
+            data['command']=line[0]
+            data['userID']=line[1]
+            if line[0] == 'ADD':
+                data['value']=line[2]
+                data['stock'] = ""
+            else:
+                data['stock']=line[2]
+                data['value']=""
+        elif len(line) == 4:
+            data['command']=line[0]
+            data['userID']=line[1]
+            data['stock']=line[2]
+            data['value']=line[3]
+            
+        print(req_str)
+        print(data )
+        res = requests.put(req_str, json=data)
+        print('closing connection')
+        res.close()
 
 
 if __name__ == "__main__":

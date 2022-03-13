@@ -7,6 +7,15 @@ var cors = require("cors");
 var mgdb = require('./db.js');
 
 var indexRouter = require('./routes/index');
+var addRouter = require('./routes/add');
+var buyRouter = require('./routes/buy');
+var sellRouter = require('./routes/sell');
+var cancelRouter = require('./routes/cancel');
+var commitRouter = require('./routes/commit');
+var dumplogRouter = require('./routes/dumplog');
+var quoteRouter = require('./routes/quote');
+var set_buyRouter = require('./routes/set_buy');
+var set_sellRouter = require('./routes/set_sell');
 var usersRouter = require('./routes/users');
 
 var app = express();
@@ -25,7 +34,16 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
+app.use('/add', addRouter);
 app.use('/users', usersRouter);
+app.use('/buy', buyRouter);
+app.use('/sell', sellRouter);
+app.use('/cancel', cancelRouter);
+app.use('/commit', commitRouter);
+app.use('/dumplog', dumplogRouter);
+app.use('/quote', quoteRouter);
+app.use('/set_buy', set_buyRouter);
+app.use('/set_sell', set_sellRouter);
 
 // middleware for allowing react to fetch() from server
 app.use(function(req, res, next) {

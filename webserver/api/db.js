@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
+require('dotenv').config()
 
-const router_ip = process.env.M_ROUTER1_IP;
-
-const url = 'mongodb://'+router_ip+':27017/DayTrading';
+const url = process.env.DATABASEURL;
 
 const connectionParams = {
   useNewUrlParser: true,
