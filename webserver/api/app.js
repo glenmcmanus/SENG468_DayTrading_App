@@ -10,12 +10,19 @@ var indexRouter = require('./routes/index');
 var addRouter = require('./routes/add');
 var buyRouter = require('./routes/buy');
 var sellRouter = require('./routes/sell');
-var cancelRouter = require('./routes/cancel');
-var commitRouter = require('./routes/commit');
+var cancelBuyRouter = require('./routes/cancel_buy');
+var cancelSellRouter = require('./routes/cancel_sell');
+var cancelSetBuyRouter = require('./routes/cancel_set_buy');
+var cancelSetSellRouter = require('./routes/cancel_set_sell');
+var commitBuyRouter = require('./routes/commit_buy');
+var commitSellRouter = require('./routes/commit_sell');
+var displaySummary = require('./routes/display_summary');
 var dumplogRouter = require('./routes/dumplog');
 var quoteRouter = require('./routes/quote');
-var set_buyRouter = require('./routes/set_buy');
-var set_sellRouter = require('./routes/set_sell');
+var set_buyAmountRouter = require('./routes/set_buy_amount');
+var set_buyTriggerRouter = require('./routes/set_buy_trigger');
+var set_sellAmountRouter = require('./routes/set_sell_amount');
+var set_sellTriggerRouter = require('./routes/set_sell_trigger');
 var usersRouter = require('./routes/users');
 
 var app = express();
@@ -38,12 +45,19 @@ app.use('/add', addRouter);
 app.use('/users', usersRouter);
 app.use('/buy', buyRouter);
 app.use('/sell', sellRouter);
-app.use('/cancel', cancelRouter);
-app.use('/commit', commitRouter);
+app.use('/cancel_buy', cancelBuyRouter);
+app.use('/cancel_sell', cancelSellRouter);
+app.use('/cancel_set_buy', cancelSetBuyRouter);
+app.use('/cancel_set_sell', cancelSetSellRouter);
+app.use('/commit_buy', commitBuyRouter);
+app.use('/commit_sell', commitSellRouter);
+app.use('/display_summary', displaySummary);
 app.use('/dumplog', dumplogRouter);
 app.use('/quote', quoteRouter);
-app.use('/set_buy', set_buyRouter);
-app.use('/set_sell', set_sellRouter);
+app.use('/set_buy_amount', set_buyAmountRouter);
+app.use('/set_buy_trigger', set_buyTriggerRouter);
+app.use('/set_sell_amount', set_sellAmountRouter);
+app.use('/set_sell_trigger', set_sellTriggerRouter);
 
 // middleware for allowing react to fetch() from server
 app.use(function(req, res, next) {

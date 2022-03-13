@@ -3,18 +3,18 @@ var router = express.Router();
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-//res.render('index', { title: 'CANCEL' });
-  res.send('CANCEL');
+ 
+  res.send('SET_SELL');
+   
 });
 
 router.post('/', (req, res) => {
     res.send('Got a POST request');
-  })
+});
   
-  router.put('/', (req, res) => {
+router.put('/', (req, res) => {
     console.log(req.body);
-       res.close();
-      
-  })
+    res.send();
+});
 
 module.exports = router;

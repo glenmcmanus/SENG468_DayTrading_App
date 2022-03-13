@@ -10,12 +10,11 @@ router.get('/', function(req, res, next) {
 
 router.post('/', (req, res) => {
     res.send('Got a POST request');
-  })
+});
   
-  router.put('/', (req, res) => {
+router.put('/', (req, res) => {
     console.log(req.body);
-       res.close();
-      
-  })
+    res.send();
+});
 
 module.exports = router;

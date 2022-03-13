@@ -3,8 +3,9 @@ var router = express.Router();
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-//res.render('index', { title: 'BUY' });
-  res.send('BUY');
+ 
+  res.send('SET_BUY');
+   
 });
 
 router.post('/', (req, res) => {

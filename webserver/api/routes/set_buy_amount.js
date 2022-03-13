@@ -3,15 +3,16 @@ var router = express.Router();
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-//res.render('index', { title: 'BUY' });
-  res.send('BUY');
+ 
+  res.send('SET_BUY');
+   
 });
 
 router.post('/', (req, res) => {
     res.send('Got a POST request');
 });
   
-router.put('/', (req, res) => {
+  router.put('/', (req, res) => {
     console.log(req.body);
     res.send();
 });

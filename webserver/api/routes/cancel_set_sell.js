@@ -3,8 +3,8 @@ var router = express.Router();
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-//res.render('index', { title: 'BUY' });
-  res.send('BUY');
+//res.render('index', { title: 'CANCEL' });
+  res.send('CANCEL');
 });
 
 router.post('/', (req, res) => {
