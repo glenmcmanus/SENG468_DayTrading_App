@@ -101,21 +101,9 @@ def log_add_funds(userid, amount):
     print("funds\n") #where can I find user funds at this time?
 
 def log_buy(userid, StockSymbol, amount):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("BUY\n") #commandType
-    print(userid + "\n") #username
-    print(StockSymbol + "\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
-
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": "default", #need to set this
+               "server": "default", #where can I find the server name?
                "command": "BUY",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -128,147 +116,165 @@ def log_buy(userid, StockSymbol, amount):
     print(f"DB log result: {newlog!r}", flush=True)
 
 def log_commit_buy(userid):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("COMMIT_BUY\n") #commandType
-    print(userid + "\n") #username
-    print("None\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "COMMIT_BUY",
+               "username": userid,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_cancel_buy(userid):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("CANCEL_BUY\n") #commandType
-    print(userid + "\n") #username
-    print("None\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "CANCEL_BUY",
+               "username": userid,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_sell(userid, StockSymbol, amount):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("SELL\n") #commandType
-    print(userid + "\n") #username
-    print(StockSymbol + "\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "SELL",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_commit_sell(userid):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("COMMIT_SELL\n") #commandType
-    print(userid + "\n") #username
-    print("None\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "COMMIT_SELL",
+               "username": userid,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_cancel_sell(userid):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("CANCEL_SELL\n") #commandType
-    print(userid + "\n") #username
-    print("None\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "CANCEL_SELL",
+               "username": userid,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_set_buy_amount(userid, StockSymbol, amount):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("SET_BUY_AMOUNT\n") #commandType
-    print(userid + "\n") #username
-    print(StockSymbol + "\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "SET_BUY_AMOUNT",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_cancel_set_buy(userid, StockSymbol):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("CANCEL_SET_BUY\n") #commandType
-    print(userid + "\n") #username
-    print(StockSymbol + "\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "CANCEL_SET_BUY",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_set_buy_trigger(userid, StockSymbol, amount):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("SET_BUY_TRIGGER\n") #commandType
-    print(userid + "\n") #username
-    print(StockSymbol + "\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "SET_BUY_TRIGGER",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_set_sell_amount(userid, StockSymbol, amount):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("SET_SELL_AMOUNT\n") #commandType
-    print(userid + "\n") #username
-    print(StockSymbol + "\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "SET_SELL_AMOUNT",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_set_sell_trigger(userid, StockSymbol, amount):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("SET_SELL_TRIGGER\n") #commandType
-    print(userid + "\n") #username
-    print(StockSymbol + "\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "SET_SELL_TRIGGER",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_cancel_set_sell(userid, StockSymbol):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("CANCEL_SET_SELL\n") #commandType
-    print(userid + "\n") #username
-    print(StockSymbol + "\n") #stockSymbol
-    print("None\n") #fileName
-    print("None\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "CANCEL_SET_SELL",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
     
 def log_command(request):
     f = open("transactionLogFile.txt", "a")
