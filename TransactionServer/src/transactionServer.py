@@ -31,51 +31,101 @@ async def handle_user_request(reader, writer):
 
 # TODO: check for malformed requests
 async def handle_request(request):
-    log_command(request)
 #request[0] = command
 #request[1] = userid
 #request[2] = funds/stocksymbol
 #request[3] = amount
     if request[0] == Const.ADD:
+        log_add_funds(request[1], request[2])
         return await add_funds(request[1], request[2])
 
     elif request[0] == Const.BUY:
+        log_buy(request[1], request[2], request[3])
         return await buy(request[1], request[2], request[3])
 
     elif request[0] == Const.COMMIT_BUY:
+        log_commit_buy(request[1])
         return await commit_buy(request[1])
 
     elif request[0] == Const.CANCEL_BUY:
+        log_cancel_buy(request[1])
         return await cancel_buy(request[1])
 
     elif request[0] == Const.SELL:
+        log_sell(request[1], request[2], request[3])
         return await sell(request[1], request[2], request[3])
 
     elif request[0] == Const.CANCEL_SELL:
+        log_cancel_sell(request[1])
         return await cancel_sell(request[1])
 
     elif request[0] == Const.SET_BUY_AMOUNT:
+        log_set_buy_amount(request[1], request[2], request[3])
         return await set_buy_amount(request[1], request[2], request[3])
 
     elif request[0] == Const.CANCEL_SET_BUY:
+        log_cancel_set_buy(request[1], request[2])
         return await cancel_set_buy(request[1], request[2])
 
     elif request[0] == Const.SET_BUY_TRIGGER:
+        log_set_buy_trigger(request[1], request[2], request[3])
         return await set_buy_trigger(request[1], request[2], request[3])
 
     elif request[0] == Const.SET_SELL_AMOUNT:
+        log_set_sell_amount(request[1], request[2], request[3])
         return await set_sell_amount(request[1], request[2], request[3])
 
     elif request[0] == Const.SET_SELL_TRIGGER:
+        log_set_sell_trigger(request[1], request[2], request[3])
         return await set_sell_trigger(request[1], request[2], request[3])
 
     elif request[0] == Const.CANCEL_SET_SELL:
+        log_cancel_set_sell(request[1], request[2])
         return await cancel_set_sell(request[1], request[2])
 
     else:
         log_error(request)
         return "Unexpected request: " + str(request[0])
 
+def log_add_funds(userid, amount):
+    pass
+
+def log_buy(userid, StockSymbol, amount):
+    pass
+
+def log_commit_buy(userid):
+    pass
+
+def log_cancel_buy(userid):
+    pass
+
+def log_sell(userid, StockSymbol, amount):
+    pass
+
+def log_commit_sell(userid):
+    pass
+
+def log_cancel_sell(userid):
+    pass
+
+def log_set_buy_amount(userid, StockSymbol, amount):
+    pass
+
+def log_cancel_set_buy(userid, StockSymbol):
+    pass
+
+def log_set_buy_trigger(userid, StockSymbol, amount):
+    pass
+
+def log_set_sell_amount(userid, StockSymbol, amount):
+    pass
+
+def log_set_sell_trigger(userid, StockSymbol, amount):
+    pass
+
+def log_cancel_set_sell(userid, StockSymbol):
+    pass
+    
 def log_command(request):
     f = open("transactionLogFile.txt", "a")
     #log in the UserCommandType format
