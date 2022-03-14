@@ -113,6 +113,18 @@ def log_buy(userid, StockSymbol, amount):
     print("None\n") #fileName
     print("None\n") #where can I find user funds at this time?
 
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #need to set this
+               "command": "BUY",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+
 def log_commit_buy(userid):
     print("eventCommand\n") #log type
     
