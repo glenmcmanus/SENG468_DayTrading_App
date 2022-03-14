@@ -339,7 +339,31 @@ async def add_funds(userid, amount):
 
 
 async def quote(userid, stock_symbol):
-    global fetch_reader, fetch_writer
+     global fetch_reader, fetch_writer
+     
+    print(db.list_collection_names())
+    print(list(db.User.find()))
+    user = db['User'].find_one({"UserID":userid})
+
+    print(f"DB user result: {user!r}", flush=True)
+
+    stock = str(stock_symbol)
+
+    if user is not None:
+        print("User ", userid, " searched for ", stock, flush=True)
+            timestamp = datetime.datetime.utcnow()
+            user = db['User'].update_one({"UserID": userid}, {"$set": {"Quote": {"Timestamp": timestamp,"Stock": stock_symbol}}})
+            return "ok"
+        else:
+            log_error({"QUOTE", userid}, "Error: Search could not be completed")
+            print("User ", userid, " search could not be completed for ", stock, flush=True)
+            return "SEARCHERROR"
+    else:
+        print("User ", userid, " not found!", flush=True)
+        log_error({"QUOTE", userid}, "Error: Invalid user")
+        return "invalid user"
+
+    return "unhandled error"
 
 
 async def buy(userid, stock_symbol, amount):
@@ -372,33 +396,152 @@ async def buy(userid, stock_symbol, amount):
     return "unhandled error"
 
 async def commit_buy(userid):
-    # check pending buy <= 60 seconds ago
-    print("User ", userid, " committed buy command")
-    return "todo: implement commit buy"
+    print(db.list_collection_names())
+    print(list(db.User.find()))
+
+    user = db['User'].find_one({"UserID":userid})
+
+    print(f"DB user result: {user!r}", flush=True)
+
+    amount = float(amount)
+
+    if user is not None:
+         print("User ", userid, " committed buy command", flush=True)
+        timestamp = datetime.datetime.utcnow()
+        print(timestamp)
+        #check pending buy ~60s ago
+        if(timestamp)
+            user = db['User'].update_one({"UserID": userid}, {"$set": {"CommitBuy": {"Timestamp": timestamp}}})
+            return "ok"
+        else:
+            log_error({"COMMIT_BUY", userid}, "Error: Commit could not be completed")
+            print("User ", userid, " commit could not be completed", flush=True)
+            return "COMMITERRORBUY"
+    else:
+        print("User ", userid, " not found!", flush=True)
+        log_error({"COMMIT_BUY", userid}, "Error: Invalid user")
+        return "invalid user"
+
+    return "unhandled error"
 
 
 async def cancel_buy(userid):
-    # check pending buy <= 60 seconds ago
-    print("User ", userid, " cancelled their buy command")
-    return "todo: implement cancel buy"
+    print(db.list_collection_names())
+    print(list(db.User.find()))
+
+    user = db['User'].find_one({"UserID":userid})
+
+    print(f"DB user result: {user!r}", flush=True)
+
+    amount = float(amount)
+
+    if user is not None:
+         print("User ", userid, " committed buy command", flush=True)
+        timestamp = datetime.datetime.utcnow()
+        print(timestamp)
+        #check pending buy ~60s ago
+        if(timestamp)
+            user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": timestamp}}})
+            return "ok"
+        else:
+            log_error({"CANCEL_BUY", userid}, "Error: Cancel could not be completed")
+            print("User ", userid, " cancel could not be completed", flush=True)
+            return "CANCELERRORBUY"
+    else:
+        print("User ", userid, " not found!", flush=True)
+        log_error({"CANCEL_BUY", userid}, "Error: Invalid user")
+        return "invalid user"
+
+    return "unhandled error"
 
 
 async def sell(userid, stock_symbol, amount):
-    # check stock amount >= sell amount
-    print("User ", userid, " sell $", amount, " of ", stock_symbol)
-    return "todo: implement sell"
+    print(db.list_collection_names())
+    print(list(db.User.find()))
+
+    user = db['User'].find_one({"UserID":userid})
+
+    print(f"DB user result: {user!r}", flush=True)
+
+    amount = float(amount)
+
+    if user is not None:
+        #Not exactly sure how to get User's amount of a certain stock
+        if user["Amount"] >= amount:
+            print("User ", userid, " sells ", amount, " of ", stock_symbol, flush=True)
+            timestamp = datetime.datetime.utcnow()
+            user = db['User'].update_one({"UserID": userid}, {"$set": {"PendingSell": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
+            return "ok"
+        else:
+            log_error({"SELL", userid}, "Error: Insufficient Stock Amount")
+            print("User ", userid, " Insufficient stock amount (ISA)", flush=True)
+            return "ISA"
+    else:
+        print("User ", userid, " not found!", flush=True)
+        log_error({"SELL", userid}, "Error: Invalid user")
+        return "invalid user"
+
+    return "unhandled error"
 
 
 async def commit_sell(userid):
-    # check pending sell <= 60 seconds ago
-    print("User ", userid, " committed sell command")
-    return "todo: implement commit sell"
+    print(db.list_collection_names())
+    print(list(db.User.find()))
+
+    user = db['User'].find_one({"UserID":userid})
+
+    print(f"DB user result: {user!r}", flush=True)
+
+    amount = float(amount)
+
+    if user is not None:
+         print("User ", userid, " committed buy command", flush=True)
+        timestamp = datetime.datetime.utcnow()
+        print(timestamp)
+        #check pending sell ~60s ago
+        if(timestamp)
+            user = db['User'].update_one({"UserID": userid}, {"$set": {"CommitSell": {"Timestamp": timestamp}}})
+            return "ok"
+        else:
+            log_error({"COMMIT_SELL", userid}, "Error: Commit could not be completed")
+            print("User ", userid, " commit could not be completed", flush=True)
+            return "COMMITERRORSELL"
+    else:
+        print("User ", userid, " not found!", flush=True)
+        log_error({"COMMIT_SELL", userid}, "Error: Invalid user")
+        return "invalid user"
+
+    return "unhandled error"
 
 
 async def cancel_sell(userid):
-    # check pending sell <= 60 seconds ago
-    print("User ", userid, " cancelled sell command")
-    return "todo: implement cancel sell"
+    print(db.list_collection_names())
+    print(list(db.User.find()))
+
+    user = db['User'].find_one({"UserID":userid})
+
+    print(f"DB user result: {user!r}", flush=True)
+
+    amount = float(amount)
+
+    if user is not None:
+         print("User ", userid, " committed buy command", flush=True)
+        timestamp = datetime.datetime.utcnow()
+        print(timestamp)
+        #check pending sell ~60s ago
+        if(timestamp)
+            user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSell": {"Timestamp": timestamp}}})
+            return "ok"
+        else:
+            log_error({"CANCEL_SELL", userid}, "Error: Cancel could not be completed")
+            print("User ", userid, " cancel could not be completed", flush=True)
+            return "CANCELERRORSELL"
+    else:
+        print("User ", userid, " not found!", flush=True)
+        log_error({"CANCEL_SELL", userid}, "Error: Invalid user")
+        return "invalid user"
+
+    return "unhandled error"
 
 
 async def set_buy_amount(userid, stock_symbol, amount):
