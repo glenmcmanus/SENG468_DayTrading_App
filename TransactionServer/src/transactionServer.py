@@ -124,6 +124,8 @@ def log_buy(userid, StockSymbol, amount):
 
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_commit_buy(userid):
     print("eventCommand\n") #log type
