@@ -84,21 +84,23 @@ async def handle_request(request):
         return await cancel_set_sell(request[1], request[2])
 
     else:
-        #log_error(request)
+        log_error(request, "Error: Unexpected request")
         return "Unexpected request: " + str(request[0])
 
 def log_add_funds(userid, amount):
-    print("eventCommand\n") #log type
-    
-    #contents of the log
-    print(str(time.time()) + "\n") #timestamp
-    print("server-0\n") #where can I find the server name?
-    print("0\n") #how will we handle transaction numbers?
-    print("ADD\n") #commandType
-    print(userid + "\n") #username
-    print("None\n") #stockSymbol
-    print("None\n") #fileName
-    print("funds\n") #where can I find user funds at this time?
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": "ADD",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               "funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 def log_buy(userid, StockSymbol, amount):
     event = {  "LogType": "UserCommandType",
@@ -275,46 +277,20 @@ def log_cancel_set_sell(userid, StockSymbol):
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
     print(f"DB log result: {newlog!r}", flush=True)
-    
-def log_command(request):
-    f = open("transactionLogFile.txt", "a")
-    #log in the UserCommandType format
-    f.write("eventCommand\n")
-    f.write(str(time.time()) + "\n")
-    f.write("server-0\n")
-    f.write("0\n")
-    f.write(str(request[0]) + "\n")
-    f.write(request[1] + "\n")
-    if request[0] == Const.BUY or request[0] == Const.SELL or request[0] == Const.SET_BUY_AMOUNT or request[0] == Const.CANCEL_SET_BUY or request[0] == Const.SET_BUY_TRIGGER or request[0] == Const.SET_SELL_AMOUNT or request[0] == Const.SET_SELL_TRIGGER or Const.CANCEL_SET_SELL:
-        f.write(request[2] + "\n")
-    else:
-        f.write("NONE\n")
-    f.write("filename\n")
-    if request[0] == Const.ADD:
-        f.write(str(request[2] + "\n\n"))
-    else:
-        f.write("NONE\n\n")
-    f.close()
 
-def log_error(request):
-    f = open("transactionLogFile.txt", "a")
-    #log in the ErrorEventType format
-    f.write("eventError\n")
-    f.write(str(time.time()) + "\n")
-    f.write("server-0\n")
-    f.write("0\n")
-    f.write(request[0] + "\n")
-    f.write(request[1] + "\n")
-    if request[0] == Const.BUY or request[0] == Const.SELL or request[0] == Const.SET_BUY_AMOUNT or request[0] == Const.CANCEL_SET_BUY or request[0] == Const.SET_BUY_TRIGGER or request[0] == Const.SET_SELL_AMOUNT or request[0] == Const.SET_SELL_TRIGGER or Const.CANCEL_SET_SELL:
-        f.write(request[2] + "\n")
-    else:
-        f.write("NONE\n")
-    f.write("filename\n")
-    if request[0] == Const.ADD:
-        f.write(str(request[2] + "\n"))
-    else:
-        f.write("NONE\n")
-    f.write("ERROR: Unexpected command\n\n")
+def log_error(request, errorMessage):
+    event = {  "LogType": "ErrorEventType",
+               "timestamp": str(time.time()),
+               "server": "default", #where can I find the server name?
+               "command": request[0],
+               "username": request[1],
+               "errorMessage": errorMessage
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 
 async def add_funds(userid, amount):
@@ -329,6 +305,7 @@ async def add_funds(userid, amount):
         return "Add success"
     else:
         print("Add funds no ack")
+        log_error({"ADD", userid}, "Error: failed to add funds")
         return "Add fail"
 
 
