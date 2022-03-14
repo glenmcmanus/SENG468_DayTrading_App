@@ -18,7 +18,7 @@ RUN mkdir -p .
 RUN mkdir -p ./Common
 RUN mkdir -p ./TransactionServer
 
-COPY ./../Common ./Common
+COPY ./Common ./Common
 COPY ./TransactionServer ./TransactionServer
 
 # command to run on container start

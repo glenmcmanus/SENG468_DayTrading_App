@@ -26,10 +26,5 @@ function enqueue(userid, query, res) {
     transaction_client.write(query);
 }
 
-function baz() {
-    console.log("baz");
-}
-
 exports.connect = connect;
 exports.enqueue = enqueue;
-exports.baz = baz;

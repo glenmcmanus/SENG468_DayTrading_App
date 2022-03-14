@@ -4,7 +4,7 @@ WORKDIR /usr/webserver/
 
 RUN mkdir -p ./api
 
-COPY ./api/package*.json ./api/.
+COPY ./api/package*.json ./api/
 
 WORKDIR /usr/webserver/api/
 RUN npm install

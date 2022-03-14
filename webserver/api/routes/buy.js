@@ -15,8 +15,6 @@ router.post('/', (req, res) => {
 });
   
 router.put('/', (req, res) => {
-    transaction_client.baz();
-
     console.log("put: " + JSON.stringify(req.body));
 
     const query = CONST.BUY + ',' + req.body['userID'] + ',' + req.body['stock'] + ',' + req.body['value'];
