@@ -21,7 +21,7 @@ services:
   transaction_server:
     image: transaction_server
     build:
-      context: .
+      context: ./
       dockerfile: ./TransactionServer/Dockerfile
     depends_on:
       - "router1"
