@@ -84,7 +84,7 @@ async def handle_request(request):
         return await cancel_set_sell(request[1], request[2])
 
     else:
-        log_error(request)
+        #log_error(request)
         return "Unexpected request: " + str(request[0])
 
 def log_add_funds(userid, amount):
@@ -93,6 +93,7 @@ def log_add_funds(userid, amount):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("ADD\n") #commandType
     print(userid + "\n") #username
     print("None\n") #stockSymbol
@@ -105,6 +106,7 @@ def log_buy(userid, StockSymbol, amount):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("BUY\n") #commandType
     print(userid + "\n") #username
     print(StockSymbol + "\n") #stockSymbol
@@ -117,6 +119,7 @@ def log_commit_buy(userid):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("COMMIT_BUY\n") #commandType
     print(userid + "\n") #username
     print("None\n") #stockSymbol
@@ -129,6 +132,7 @@ def log_cancel_buy(userid):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("CANCEL_BUY\n") #commandType
     print(userid + "\n") #username
     print("None\n") #stockSymbol
@@ -141,6 +145,7 @@ def log_sell(userid, StockSymbol, amount):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("SELL\n") #commandType
     print(userid + "\n") #username
     print(StockSymbol + "\n") #stockSymbol
@@ -153,6 +158,7 @@ def log_commit_sell(userid):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("COMMIT_SELL\n") #commandType
     print(userid + "\n") #username
     print("None\n") #stockSymbol
@@ -165,6 +171,7 @@ def log_cancel_sell(userid):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("CANCEL_SELL\n") #commandType
     print(userid + "\n") #username
     print("None\n") #stockSymbol
@@ -177,6 +184,7 @@ def log_set_buy_amount(userid, StockSymbol, amount):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("SET_BUY_AMOUNT\n") #commandType
     print(userid + "\n") #username
     print(StockSymbol + "\n") #stockSymbol
@@ -189,6 +197,7 @@ def log_cancel_set_buy(userid, StockSymbol):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("CANCEL_SET_BUY\n") #commandType
     print(userid + "\n") #username
     print(StockSymbol + "\n") #stockSymbol
@@ -201,6 +210,7 @@ def log_set_buy_trigger(userid, StockSymbol, amount):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("SET_BUY_TRIGGER\n") #commandType
     print(userid + "\n") #username
     print(StockSymbol + "\n") #stockSymbol
@@ -213,6 +223,7 @@ def log_set_sell_amount(userid, StockSymbol, amount):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("SET_SELL_AMOUNT\n") #commandType
     print(userid + "\n") #username
     print(StockSymbol + "\n") #stockSymbol
@@ -225,6 +236,7 @@ def log_set_sell_trigger(userid, StockSymbol, amount):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("SET_SELL_TRIGGER\n") #commandType
     print(userid + "\n") #username
     print(StockSymbol + "\n") #stockSymbol
@@ -237,6 +249,7 @@ def log_cancel_set_sell(userid, StockSymbol):
     #contents of the log
     print(str(time.time()) + "\n") #timestamp
     print("server-0\n") #where can I find the server name?
+    print("0\n") #how will we handle transaction numbers?
     print("CANCEL_SET_SELL\n") #commandType
     print(userid + "\n") #username
     print(StockSymbol + "\n") #stockSymbol
@@ -322,6 +335,7 @@ async def buy(userid, stock_symbol, amount):
                                                                                     "Amount": amount}}})
             return "ok"
         else:
+            #log error here
             print("User ", userid, " non-sufficient funds (NSF)", flush=True)
             return "NSF"
     else:
