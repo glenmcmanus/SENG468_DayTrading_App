@@ -88,43 +88,160 @@ async def handle_request(request):
         return "Unexpected request: " + str(request[0])
 
 def log_add_funds(userid, amount):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("ADD\n") #commandType
+    print(userid + "\n") #username
+    print("None\n") #stockSymbol
+    print("None\n") #fileName
+    print("funds\n") #where can I find user funds at this time?
 
 def log_buy(userid, StockSymbol, amount):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("BUY\n") #commandType
+    print(userid + "\n") #username
+    print(StockSymbol + "\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_commit_buy(userid):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("COMMIT_BUY\n") #commandType
+    print(userid + "\n") #username
+    print("None\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_cancel_buy(userid):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("CANCEL_BUY\n") #commandType
+    print(userid + "\n") #username
+    print("None\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_sell(userid, StockSymbol, amount):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("SELL\n") #commandType
+    print(userid + "\n") #username
+    print(StockSymbol + "\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_commit_sell(userid):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("COMMIT_SELL\n") #commandType
+    print(userid + "\n") #username
+    print("None\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_cancel_sell(userid):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("CANCEL_SELL\n") #commandType
+    print(userid + "\n") #username
+    print("None\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_set_buy_amount(userid, StockSymbol, amount):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("SET_BUY_AMOUNT\n") #commandType
+    print(userid + "\n") #username
+    print(StockSymbol + "\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_cancel_set_buy(userid, StockSymbol):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("CANCEL_SET_BUY\n") #commandType
+    print(userid + "\n") #username
+    print(StockSymbol + "\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_set_buy_trigger(userid, StockSymbol, amount):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("SET_BUY_TRIGGER\n") #commandType
+    print(userid + "\n") #username
+    print(StockSymbol + "\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_set_sell_amount(userid, StockSymbol, amount):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("SET_SELL_AMOUNT\n") #commandType
+    print(userid + "\n") #username
+    print(StockSymbol + "\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_set_sell_trigger(userid, StockSymbol, amount):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("SET_SELL_TRIGGER\n") #commandType
+    print(userid + "\n") #username
+    print(StockSymbol + "\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
 
 def log_cancel_set_sell(userid, StockSymbol):
-    pass
+    print("eventCommand\n") #log type
+    
+    #contents of the log
+    print(str(time.time()) + "\n") #timestamp
+    print("server-0\n") #where can I find the server name?
+    print("CANCEL_SET_SELL\n") #commandType
+    print(userid + "\n") #username
+    print(StockSymbol + "\n") #stockSymbol
+    print("None\n") #fileName
+    print("None\n") #where can I find user funds at this time?
     
 def log_command(request):
     f = open("transactionLogFile.txt", "a")
@@ -184,10 +301,6 @@ async def add_funds(userid, amount):
 
 async def quote(userid, stock_symbol):
     global fetch_reader, fetch_writer
-
-
-def log_add_funds():
-    pass
 
 
 async def buy(userid, stock_symbol, amount):
