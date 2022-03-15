@@ -14,6 +14,8 @@ function connect() {
 
 fetch_client.on('data', function(data) {
 	console.log('Received: ' + data);
+    const result = data.toString().split(',');
+    fetch_buffer[result[0]].send(data);
 });
 
 function enqueue(userid, query, res) {

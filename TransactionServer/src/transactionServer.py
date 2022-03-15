@@ -17,6 +17,15 @@ async def handle_user_request(reader, writer):
         print(f"Received {message!r} from {addr!r}", flush=True)
 
         message = message.split(',')
+        
+        if (len(message) < 2):
+            writer.write(''.encode())
+            await writer.drain()
+            continue
+            
+        response = message[0] + ',' + process_request(message[0], message[1])
+        log_request(response)
+        
 
         message[0] = int(message[0])
 
@@ -25,7 +34,7 @@ async def handle_user_request(reader, writer):
         response = message[1] + ',' + response
 
         print(f"Send: {response!r}")
-        writer.write(response.encode())
+            writer.write(response.encode())
         await writer.drain()
 
 
@@ -352,7 +361,7 @@ async def add_funds(userid, amount):
 
 
 async def quote(userid, stock_symbol):
-    global fetch_reader, fetch_writer
+    #global fetch_reader, fetch_writer
     print(db.list_collection_names())
     print(list(db.User.find()))
     user = db['User'].find_one({"UserID":userid})
@@ -365,7 +374,7 @@ async def quote(userid, stock_symbol):
         print("User ", userid, " searched for ", stock, flush=True)
         timestamp = time.time()
         if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"Quote": {"Timestamp": timestamp,"Stock": stock_symbol}}})
+            user = db.User.update_one({"UserID": userid}, {"$set": {"Quote": {"Timestamp": timestamp,"Stock": stock_symbol}}})
             return "ok"
         else:
             log_error(["QUOTE", userid], "Error: Search could not be completed")
@@ -455,17 +464,21 @@ async def cancel_buy(userid):
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        print("User ", userid, " committed buy command", flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        #check pending buy ~60s ago
-        if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": timestamp}}})
-            return "ok"
+        if not user.__contains__("PendingBuy"):
+            return "No pending buy"
         else:
-            log_error(["CANCEL_BUY", userid], "Error: Cancel could not be completed")
-            print("User ", userid, " cancel could not be completed", flush=True)
-            return "CANCELERRORBUY"
+            now = time.time()
+            elapsed = now - int(user["PendingBuy"]["Timestamp"])
+
+            print("Timestamps(then,now,elapsed): ", user["PendingBuy"]["Timestamp"], now, elapsed, flush=True)
+
+            if elapsed <= 60:
+                user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": now}}})
+                return "ok"
+            else:
+                log_error({"CANCEL_BUY", userid}, "Error: Cancel could not be completed")
+                print("User ", userid, " cancel could not be completed", flush=True)
+                return "CANCELERRORBUY"
     else:
         print("User ", userid, " not found!", flush=True)
         log_error(["CANCEL_BUY", userid], "Error: Invalid user")
@@ -512,17 +525,28 @@ async def commit_sell(userid):
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        print("User ", userid, " committed buy command", flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        #check pending sell ~60s ago
-        if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"CommitSell": {"Timestamp": timestamp}}})
-            return "ok"
+        if not user.__contains__("PendingSell"):
+            return "No pending sell"
         else:
-            log_error(["COMMIT_SELL", userid], "Error: Commit could not be completed")
-            print("User ", userid, " commit could not be completed", flush=True)
-            return "COMMITERRORSELL"
+        # print("User ", userid, " committed buy command", flush=True)
+            now = time.time()
+            elapsed = now - int(user["PendingSell"]["Timestamp"])
+            print("Timestamps(then,now,elapsed): ", user["PendingSell"]["Timestamp"], now, elapsed, flush=True)
+        #check pending sell ~60s ago
+            if elapsed <= 60:
+                print("User ", userid, " Commit sell")
+                db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": int(user["PendingSell"]["Amount"])}})
+                db.User.update_one({"UserID": userid}, {"$set": {"PendingSell": None}})
+
+                user = db.User.find_one({"UserID": userid})
+                print(f"DB user after commit sell: {user!r}", flush=True)
+
+                #todo: update stock portfolio
+                return "Success"
+            else:
+                log_error(["COMMIT_SELL", userid], "Error: Failed to commit sell; time elapsed: " + str(elapsed))
+                print("User ", userid, " Failed to commit sell. Elapsed: ", elapsed)
+                return "Time window exceeded by " + str(elapsed - 60) + "s"
     else:
         print("User ", userid, " not found!", flush=True)
         log_error(["COMMIT_SELL", userid], "Error: Invalid user")
@@ -540,17 +564,21 @@ async def cancel_sell(userid):
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        print("User ", userid, " committed buy command", flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        #check pending sell ~60s ago
-        if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSell": {"Timestamp": timestamp}}})
-            return "ok"
+        if not user.__contains__("PendingSell"):
+            return "No pending sell"
         else:
-            log_error(["CANCEL_SELL", userid], "Error: Cancel could not be completed")
-            print("User ", userid, " cancel could not be completed", flush=True)
-            return "CANCELERRORSELL"
+            now = time.time()
+            elapsed = now - int(user["PendingSell"]["Timestamp"])
+
+            print("Timestamps(then,now,elapsed): ", user["PendingSell"]["Timestamp"], now, elapsed, flush=True)
+
+            if elapsed <= 60:
+                user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSell": {"Timestamp": now}}})
+                return "ok"
+            else:
+                log_error({"CANCEL_SELL", userid}, "Error: Cancel could not be completed")
+                print("User ", userid, " cancel could not be completed", flush=True)
+                return "CANCELERRORSELL"        
     else:
         print("User ", userid, " not found!", flush=True)
         log_error(["CANCEL_SELL", userid], "Error: Invalid user")
