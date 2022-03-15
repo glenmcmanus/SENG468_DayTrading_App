@@ -352,7 +352,7 @@ async def add_funds(userid, amount):
 
 
 async def quote(userid, stock_symbol):
-    global fetch_reader, fetch_writer
+    #global fetch_reader, fetch_writer
     print(db.list_collection_names())
     print(list(db.User.find()))
     user = db['User'].find_one({"UserID":userid})
@@ -365,7 +365,7 @@ async def quote(userid, stock_symbol):
         print("User ", userid, " searched for ", stock, flush=True)
         timestamp = time.time()
         if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"Quote": {"Timestamp": timestamp,"Stock": stock_symbol}}})
+            user = db.User.update_one({"UserID": userid}, {"$set": {"Quote": {"Timestamp": timestamp,"Stock": stock_symbol}}})
             return "ok"
         else:
             log_error(["QUOTE", userid], "Error: Search could not be completed")
