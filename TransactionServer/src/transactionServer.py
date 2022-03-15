@@ -455,17 +455,21 @@ async def cancel_buy(userid):
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        print("User ", userid, " committed buy command", flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        #check pending buy ~60s ago
-        if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": timestamp}}})
-            return "ok"
+        if not user.__contains__("PendingBuy"):
+            return "No pending buy"
         else:
-            log_error(["CANCEL_BUY", userid], "Error: Cancel could not be completed")
-            print("User ", userid, " cancel could not be completed", flush=True)
-            return "CANCELERRORBUY"
+            now = time.time()
+            elapsed = now - int(user["PendingBuy"]["Timestamp"])
+
+            print("Timestamps(then,now,elapsed): ", user["PendingBuy"]["Timestamp"], now, elapsed, flush=True)
+
+            if elapsed <= 60:
+                user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": now}}})
+                return "ok"
+            else:
+                log_error({"CANCEL_BUY", userid}, "Error: Cancel could not be completed")
+                print("User ", userid, " cancel could not be completed", flush=True)
+                return "CANCELERRORBUY"
     else:
         print("User ", userid, " not found!", flush=True)
         log_error(["CANCEL_BUY", userid], "Error: Invalid user")
