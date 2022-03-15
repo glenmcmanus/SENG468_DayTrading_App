@@ -93,8 +93,6 @@ def log_add_funds(userid, amount):
                "server": "default",
                "command": "ADD",
                "username": userid,
-               "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -278,13 +276,12 @@ def log_cancel_set_sell(userid, StockSymbol):
     newlog = db['EventLog'].find_one({"username":userid})
     print(f"DB log result: {newlog!r}", flush=True)
 
-def log_error(request, errorMessage):
+def log_error(request, userid):
     event = {  "LogType": "ErrorEventType",
                "timestamp": str(time.time()),
                "server": "default", 
                "command": request[0],
                "username": request[1],
-               "errorMessage": errorMessage
                  }
 
     eventLog = db['EventLog']
@@ -305,15 +302,12 @@ def log_transaction(userid, funds):
     newlog = db['EventLog'].find_one({"username":userid})
     print(f"DB log result: {newlog!r}", flush=True)
 
-def log_quote():
+def log_quote(userid, StockSymbol):
     event = {  "LogType": "QuoteServerType",
                "timestamp": str(time.time()),
                "server": "default", 
-               "price": price,
-               "stockSymbol": stockSymbol,
+               "stockSymbol": StockSymbol,
                "username": userid,
-               "quoteServerTime": quoteServerTime,
-               "cryptokey": cryptokey
                  }
 
     eventLog = db['EventLog']
