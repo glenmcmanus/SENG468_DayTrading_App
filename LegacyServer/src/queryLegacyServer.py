@@ -53,7 +53,7 @@ async def handle_request(reader, writer):
 
         message = message.split(',')
 
-        response = process_request(message[0], message[1])
+        response = message[0] + ',' + process_request(message[0], message[1])
         log_request(response)
 
         print(f"Send: {response!r}")
