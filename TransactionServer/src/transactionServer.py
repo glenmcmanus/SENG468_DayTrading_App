@@ -99,7 +99,7 @@ def log_add_funds(userid, amount):
                "server": "default",
                "command": "ADD",
                "username": userid,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
             }
 
     eventLog = db['EventLog']
@@ -115,7 +115,7 @@ def log_buy(userid, StockSymbol, amount):
                "command": "BUY",
                "username": userid,
                "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -130,7 +130,7 @@ def log_commit_buy(userid):
                "server": "default",
                "command": "COMMIT_BUY",
                "username": userid,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -145,7 +145,7 @@ def log_cancel_buy(userid):
                "server": "default",
                "command": "CANCEL_BUY",
                "username": userid,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -161,7 +161,7 @@ def log_sell(userid, StockSymbol, amount):
                "command": "SELL",
                "username": userid,
                "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -176,7 +176,7 @@ def log_commit_sell(userid):
                "server": "default",
                "command": "COMMIT_SELL",
                "username": userid,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -191,7 +191,7 @@ def log_cancel_sell(userid):
                "server": "default",
                "command": "CANCEL_SELL",
                "username": userid,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -207,7 +207,7 @@ def log_set_buy_amount(userid, StockSymbol, amount):
                "command": "SET_BUY_AMOUNT",
                "username": userid,
                "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -223,7 +223,7 @@ def log_cancel_set_buy(userid, StockSymbol):
                "command": "CANCEL_SET_BUY",
                "username": userid,
                "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -239,7 +239,7 @@ def log_set_buy_trigger(userid, StockSymbol, amount):
                "command": "SET_BUY_TRIGGER",
                "username": userid,
                "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -255,7 +255,7 @@ def log_set_sell_amount(userid, StockSymbol, amount):
                "command": "SET_SELL_AMOUNT",
                "username": userid,
                "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -271,7 +271,7 @@ def log_set_sell_trigger(userid, StockSymbol, amount):
                "command": "SET_SELL_TRIGGER",
                "username": userid,
                "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
@@ -287,7 +287,7 @@ def log_cancel_set_sell(userid, StockSymbol):
                "command": "CANCEL_SET_SELL",
                "username": userid,
                "stockSymbol": StockSymbol,
-               "funds": "n/a" #do we need this?
+               #"funds": "n/a" #do we need this?
                  }
 
     eventLog = db['EventLog']
