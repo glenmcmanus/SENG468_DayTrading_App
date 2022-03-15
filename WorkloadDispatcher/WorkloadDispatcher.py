@@ -1,4 +1,6 @@
 import json
+import time
+
 import requests
 import sys
 
@@ -42,7 +44,15 @@ def main():
     users = []
 
     for line in f:
-        line = line.split(' ')[1].split(',')
+        if line[0] == '#':
+            continue
+
+        line = line.rstrip().split(' ')[1].split(',')
+
+        if line[0].lower() == 'sleep':
+            print('Sleeping for ', line[1], 's')
+            time.sleep(int(line[1]))
+            continue
 
         print("line after split: ", line)
         req_str = 'http://localhost:9000/' + line[0].lower()

@@ -319,10 +319,12 @@ def log_quote(userid, StockSymbol):
 async def add_funds(userid, amount):
     print("User ", userid, " add $", amount)
 
-    res = db.Users.update_one({"UserID":userid}, {"$inc" : {"AccountBalance":float(amount)}})
-    print(res, flush=True)
+    res = db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": float(amount)}})
+    print(f"Update result: {res.raw_result!r}", flush=True)
 
-    result = userid
+    user = db['User'].find_one({"UserID": userid})
+    print(f"DB user result: {user!r}", flush=True)
+
     if res.acknowledged:
         print("Add funds Ack")
         return "Add success"
@@ -361,10 +363,7 @@ async def quote(userid, stock_symbol):
 
 
 async def buy(userid, stock_symbol, amount):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-
-    user = db['User'].find_one({"UserID":userid})
+    user = db.User.find_one({"UserID": userid})
 
     print(f"DB user result: {user!r}", flush=True)
 
@@ -374,7 +373,15 @@ async def buy(userid, stock_symbol, amount):
         if user["AccountBalance"] >= amount:
             print("User ", userid, " buy $", amount, " of ", stock_symbol, flush=True)
             timestamp = time.time()
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"PendingBuy": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
+
+            pending_buy = {"Timestamp": timestamp,
+                           "Stock": stock_symbol,
+                           "Amount": amount}
+
+            result = db.User.update_one({"UserID": userid}, {"$set": {"PendingBuy": pending_buy}})
+
+            print(f"DB user set result: {result.raw_result!r}", flush=True)
+
             return "ok"
         else:
             log_error({"BUY", userid}, "Error: Insufficient funds")
@@ -388,25 +395,32 @@ async def buy(userid, stock_symbol, amount):
     return "unhandled error"
 
 async def commit_buy(userid):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-
-    user = db['User'].find_one({"UserID":userid})
-
+    user = db.User.find_one({"UserID": userid})
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        print("User ", userid, " committed buy command", flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        #check pending buy ~60s ago
-        if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"CommitBuy": {"Timestamp": timestamp}}})
-            return "ok"
+        if not user.__contains__("PendingBuy"):
+            return "No pending buy"
         else:
-            log_error({"COMMIT_BUY", userid}, "Error: Commit could not be completed")
-            print("User ", userid, " commit could not be completed", flush=True)
-            return "COMMITERRORBUY"
+            now = time.time()
+            elapsed = now - int(user["PendingBuy"]["Timestamp"])
+
+            print("Timestamps(then,now,elapsed): ", user["PendingBuy"]["Timestamp"], now, elapsed, flush=True)
+
+            if elapsed <= 60:
+                print("User ", userid, " Commit buy")
+                db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": -int(user["PendingBuy"]["Amount"])}})
+                db.User.update_one({"UserID": userid}, {"$set": {"PendingBuy": None}})
+
+                user = db.User.find_one({"UserID": userid})
+                print(f"DB user after commit buy: {user!r}", flush=True)
+
+                #todo: update stock portfolio
+                return "Success"
+            else:
+                print("User ", userid, " Failed to commit buy. Elapsed: ", elapsed)
+                log_error({"COMMIT_BUY", userid}, "Error: Failed to commit buy; time elapsed: " + elapsed)
+                return "Time window exceeded by " + str(elapsed - 60) + "s"
     else:
         print("User ", userid, " not found!", flush=True)
         log_error({"COMMIT_BUY", userid}, "Error: Invalid user")
@@ -706,6 +720,9 @@ async def cancel_set_sell(userid, stock_symbol):
 
 
 async def main():
+
+    if os.environ.__contains__("NAME"):
+        print("Name: ", os.environ["NAME"])
 
     if os.environ.__contains__("TRANSACTION_IP"):
         print(os.environ["TRANSACTION_IP"])
