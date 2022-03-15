@@ -297,7 +297,7 @@ def log_error(request, userid):
                "server": "default", 
                "command": request[0],
                "username": request[1],
-                 }
+            }
 
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
@@ -347,7 +347,7 @@ async def add_funds(userid, amount):
         return "Add success"
     else:
         print("Add funds no ack")
-        log_error({"ADD", userid}, "Error: failed to add funds")
+        log_error(["ADD", userid], "Error: failed to add funds")
         return "Add fail"
 
 
@@ -368,12 +368,12 @@ async def quote(userid, stock_symbol):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"Quote": {"Timestamp": timestamp,"Stock": stock_symbol}}})
             return "ok"
         else:
-            log_error({"QUOTE", userid}, "Error: Search could not be completed")
+            log_error(["QUOTE", userid], "Error: Search could not be completed")
             print("User ", userid, " search could not be completed for ", stock, flush=True)
             return "SEARCHERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"QUOTE", userid}, "Error: Invalid user")
+        log_error(["QUOTE", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -401,12 +401,12 @@ async def buy(userid, stock_symbol, amount):
 
             return "ok"
         else:
-            log_error({"BUY", userid}, "Error: Insufficient funds")
+            log_error(["BUY", userid], "Error: Insufficient funds")
             print("User ", userid, " non-sufficient funds (NSF)", flush=True)
             return "NSF"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"BUY", userid}, "Error: Invalid user")
+        log_error(["BUY", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -436,11 +436,11 @@ async def commit_buy(userid):
                 return "Success"
             else:
                 print("User ", userid, " Failed to commit buy. Elapsed: ", elapsed)
-                log_error({"COMMIT_BUY", userid}, "Error: Failed to commit buy; time elapsed: " + elapsed)
+                log_error(["COMMIT_BUY", userid], "Error: Failed to commit buy; time elapsed: " + str(elapsed))
                 return "Time window exceeded by " + str(elapsed - 60) + "s"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"COMMIT_BUY", userid}, "Error: Invalid user")
+        log_error(["COMMIT_BUY", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -463,12 +463,12 @@ async def cancel_buy(userid):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": timestamp}}})
             return "ok"
         else:
-            log_error({"CANCEL_BUY", userid}, "Error: Cancel could not be completed")
+            log_error(["CANCEL_BUY", userid], "Error: Cancel could not be completed")
             print("User ", userid, " cancel could not be completed", flush=True)
             return "CANCELERRORBUY"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"CANCEL_BUY", userid}, "Error: Invalid user")
+        log_error(["CANCEL_BUY", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -492,12 +492,12 @@ async def sell(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"PendingSell": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            log_error({"SELL", userid}, "Error: Insufficient Stock Amount")
+            log_error(["SELL", userid], "Error: Insufficient Stock Amount")
             print("User ", userid, " Insufficient stock amount (ISA)", flush=True)
             return "ISA"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"SELL", userid}, "Error: Invalid user")
+        log_error(["SELL", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -520,12 +520,12 @@ async def commit_sell(userid):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"CommitSell": {"Timestamp": timestamp}}})
             return "ok"
         else:
-            log_error({"COMMIT_SELL", userid}, "Error: Commit could not be completed")
+            log_error(["COMMIT_SELL", userid], "Error: Commit could not be completed")
             print("User ", userid, " commit could not be completed", flush=True)
             return "COMMITERRORSELL"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"COMMIT_SELL", userid}, "Error: Invalid user")
+        log_error(["COMMIT_SELL", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -548,12 +548,12 @@ async def cancel_sell(userid):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSell": {"Timestamp": timestamp}}})
             return "ok"
         else:
-            log_error({"CANCEL_SELL", userid}, "Error: Cancel could not be completed")
+            log_error(["CANCEL_SELL", userid], "Error: Cancel could not be completed")
             print("User ", userid, " cancel could not be completed", flush=True)
             return "CANCELERRORSELL"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"CANCEL_SELL", userid}, "Error: Invalid user")
+        log_error(["CANCEL_SELL", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -577,12 +577,12 @@ async def set_buy_amount(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"SetBuyAmount": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            log_error({"SET_BUY_AMOUNT", userid}, "Error: could not set a buy amount")
+            log_error(["SET_BUY_AMOUNT", userid], "Error: could not set a buy amount")
             print("User ", userid, " can not set automated buy for ", stock_symbol, flush=True)
             return "SETBUYERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"SET_BUY_AMOUNT", userid}, "Error: Invalid user")
+        log_error(["SET_BUY_AMOUNT", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -606,12 +606,12 @@ async def cancel_set_buy(userid, stock_symbol):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSetBuy": {"Timestamp": timestamp,"Stock": stock_symbol}}})
             return "ok"
         else:
-            log_error({"CANCEL_SET_BUY", userid}, "Error: Cancel could not be completed")
+            log_error(["CANCEL_SET_BUY", userid], "Error: Cancel could not be completed")
             print("User ", userid, " cancel could not be completed", flush=True)
             return "CANCELERRORSETBUY"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"CANCEL_SET_BUY", userid}, "Error: Invalid user")
+        log_error(["CANCEL_SET_BUY", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -636,12 +636,12 @@ async def set_buy_trigger(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"SetBuyTrigger": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            log_error({"SET_BUY_TRIGGER", userid}, "Error: could not set a buy trigger")
+            log_error(["SET_BUY_TRIGGER", userid], "Error: could not set a buy trigger")
             print("User ", userid, " can not set automated buy for ", stock_symbol, flush=True)
             return "SETBUYTRIGGERERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"SET_BUY_TRIGGER", userid}, "Error: Invalid user")
+        log_error(["SET_BUY_TRIGGER", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -666,12 +666,12 @@ async def set_sell_amount(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"SetSellAmount": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            log_error({"SET_SELL_AMOUNT", userid}, "Error: could not set a sell amount")
+            log_error(["SET_SELL_AMOUNT", userid], "Error: could not set a sell amount")
             print("User ", userid, " can not set automated sell for ", stock_symbol, flush=True)
             return "SETSELLERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"SET_BUY_AMOUNT", userid}, "Error: Invalid user")
+        log_error(["SET_BUY_AMOUNT", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -696,12 +696,12 @@ async def set_sell_trigger(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"SetSellTrigger": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            log_error({"SET_SELL_TRIGGER", userid}, "Error: could not set a sell trigger")
+            log_error(["SET_SELL_TRIGGER", userid], "Error: could not set a sell trigger")
             print("User ", userid, " can not set automated sell for ", stock_symbol, flush=True)
             return "SETSELLTRIGGERERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"SET_SELL_TRIGGER", userid}, "Error: Invalid user")
+        log_error(["SET_SELL_TRIGGER", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -725,12 +725,12 @@ async def cancel_set_sell(userid, stock_symbol):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSetSell": {"Timestamp": timestamp,"Stock": stock_symbol}}})
             return "ok"
         else:
-            log_error({"CANCEL_SET_SELL", userid}, "Error: Cancel could not be completed")
+            log_error(["CANCEL_SET_SELL", userid], "Error: Cancel could not be completed")
             print("User ", userid, " cancel could not be completed", flush=True)
             return "CANCELERRORSETSELL"
     else:
         print("User ", userid, " not found!", flush=True)
-        log_error({"CANCEL_SET_SELL", userid}, "Error: Invalid user")
+        log_error(["CANCEL_SET_SELL", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
