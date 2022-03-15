@@ -1,4 +1,5 @@
 const CONST = require("../public/javascripts/constants");
+const db = require("../db.js")
 
 var express = require('express');
 var router = express.Router();
@@ -14,9 +15,9 @@ router.post('/', (req, res) => {
     res.send('Got a POST request');
 });
   
-router.put('/', (req, res) => {
+router.put('/', async function(req, res) {
     console.log(req.body);
-    res.send();
+    res.send(await db.dumpLog(req.body['userID']));
 });
 
 module.exports = router;

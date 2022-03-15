@@ -4,6 +4,8 @@ import time
 import requests
 import sys
 
+import GenerateXML
+
 query_param_definition = {
     'ADD':['userid','amount'],
     'QUOTE':['userid', 'StockSymbol'],
@@ -32,6 +34,7 @@ data['value'] = ""
 data['stock'] = ""
 data['filename'] = ""
 
+#todo: split users into threads
 def main():
     if len(sys.argv) < 2:
         print("You need to pass in the file for dispatch")
@@ -75,6 +78,11 @@ def main():
                 data['userID'] = ""
                 data['value'] = ""
                 data['stock'] = ""
+            res = requests.put(req_str, json=data)
+            res.close()
+
+            GenerateXML.generate_file(data['filename'], res.content)
+
         elif len(line) == 2:
             data['command']=line[0]
             data['userID']=line[1]
@@ -101,7 +109,6 @@ def main():
         res = requests.put(req_str, json=data)
         print(res, res.content)
         res.close()
-
 
 if __name__ == "__main__":
     main()

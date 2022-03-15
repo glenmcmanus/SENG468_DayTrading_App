@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({UserID: String,
                               PendingBuy: {},
                               PendingSell: {}});
 var User = null;
+var EventLog = null;
 
 function connectDB () {
 
@@ -31,6 +32,7 @@ function connectDB () {
     .then(() => {
       console.log("Connected to database ");
       User = mongoose.model('User', userSchema, 'User');
+      EventLog = mongoose.model('EventLog', {}, 'EventLog');
     })
     .catch((err) => {
       console.error(`Error connecting to the database. \n${err}`);
@@ -65,6 +67,15 @@ async function dropAll() {
         await User.deleteMany({});
 }
 
+async function dumpLog(userid='') {
+    if(userid != '')
+        return await EventLog.find({UserID:userid});
+    else
+        return await EventLog.find({});
+}
+
+
 exports.dropAll = dropAll;
 exports.connectDB = connectDB;
 exports.register = register;
+exports.dumpLog = dumpLog;
