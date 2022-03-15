@@ -495,7 +495,7 @@ async def sell(userid, stock_symbol, amount):
 
     if user is not None:
         #Not exactly sure how to get User's amount of a certain stock
-        if user["Amount"] >= amount:
+        if user["AccountBalance"] >= amount:
             print("User ", userid, " sells ", amount, " of ", stock_symbol, flush=True)
             timestamp = time.time()
             user = db['User'].update_one({"UserID": userid}, {"$set": {"PendingSell": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
