@@ -57,7 +57,7 @@ def main():
             time.sleep(int(line[1]))
             continue
 
-        #print("line after split: ", line)
+        print("line after split: ", line)
         req_str = 'http://localhost:9000/' + line[0].lower()
 
         if len(line) > 1:
