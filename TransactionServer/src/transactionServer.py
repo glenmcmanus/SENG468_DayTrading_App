@@ -17,6 +17,15 @@ async def handle_user_request(reader, writer):
         print(f"Received {message!r} from {addr!r}", flush=True)
 
         message = message.split(',')
+        
+        if (len(message) < 2):
+            writer.write(''.encode())
+            await writer.drain()
+            continue
+            
+        response = message[0] + ',' + process_request(message[0], message[1])
+        log_request(response)
+        
 
         message[0] = int(message[0])
 
@@ -25,7 +34,7 @@ async def handle_user_request(reader, writer):
         response = message[1] + ',' + response
 
         print(f"Send: {response!r}")
-        writer.write(response.encode())
+            writer.write(response.encode())
         await writer.drain()
 
 
