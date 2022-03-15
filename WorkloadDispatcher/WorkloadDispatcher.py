@@ -40,7 +40,7 @@ def main():
         print("You need to pass in the file for dispatch")
         return
 
-    #print(requests.get('http://localhost:9000/DEBUG_DROP', timeout=1000))
+    print(requests.get('http://localhost:9000/DEBUG_DROP', timeout=1000))
 
     f = open(sys.argv[1])
 
@@ -57,7 +57,7 @@ def main():
             time.sleep(int(line[1]))
             continue
 
-        print("line after split: ", line)
+        #print("line after split: ", line)
         req_str = 'http://localhost:9000/' + line[0].lower()
 
         if len(line) > 1:

@@ -162,7 +162,7 @@ def generate_errorEvent(log, transactionNum):
     timestamp_string = "        <timestamp>" + log['timestamp'].rstrip('.') + "</timestamp>\n"
     server_string = "        <server>" + log['server'] + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
-    command_string = "        <command>" + log['command'] + "</command>\n"
+    command_string = "        <command>" + str(log['command']) + "</command>\n"
     if log.__contains__('username'):
         username_string = "        <username>" + log['username'] + "</username>\n"
     else:
