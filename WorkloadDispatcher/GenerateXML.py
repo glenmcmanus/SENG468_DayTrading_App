@@ -1,5 +1,5 @@
 def generate_userCommand(timestamp, server, transactionNum, command, username = None, stockSymbol = None, filename = None, funds = None):
-    timestamp_string = "        <timestamp>" + timestamp + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + timestamp.split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + server + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     command_string = "        <command>" + command + "</command>\n"
@@ -23,7 +23,7 @@ def generate_userCommand(timestamp, server, transactionNum, command, username = 
 
 
 def generate_userCommand(log, transactionNum):
-    timestamp_string = "        <timestamp>" + log['timestamp'].rstrip('.') + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + log['timestamp'].split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + log['server'] + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     command_string = "        <command>" + log['command'] + "</command>\n"
@@ -47,7 +47,7 @@ def generate_userCommand(log, transactionNum):
 
 
 def generate_quoteServer(timestamp, server, transactionNum, price, stockSymbol, username, quoteServerTime, cryptokey):
-    timestamp_string = "        <timestamp>" + timestamp + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + timestamp.split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + server + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     price_string = "        <price>" + price + "</price>\n"
@@ -58,7 +58,7 @@ def generate_quoteServer(timestamp, server, transactionNum, price, stockSymbol, 
     return "    <quoteServer>\n" + timestamp_string + server_string + transactionNum_string + price_string + stockSymbol_string + username_string + quoteServerTime_string + cryptokey_string + "    </quoteServer>\n"
 
 def generate_quoteServer(log, transactionNum):
-    timestamp_string = "        <timestamp>" + log['timestamp'].rstrip('.') + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + log['timestamp'].split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + log['server'] + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     price_string = "        <price>" + log['price'] + "</price>\n"
@@ -70,7 +70,7 @@ def generate_quoteServer(log, transactionNum):
 
 
 def generate_accountTransaction(timestamp, server, transactionNum, action, username, funds):
-    timestamp_string = "        <timestamp>" + timestamp + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + timestamp.split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + server + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     action_string = "        <action>" + action + "</action>\n"
@@ -80,7 +80,7 @@ def generate_accountTransaction(timestamp, server, transactionNum, action, usern
 
 
 def generate_accountTransaction(log, transactionNum):
-    timestamp_string = "        <timestamp>" + log['timestamp'].rstrip('.') + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + log['timestamp'].split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + log['server'] + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     action_string = "        <action>" + log['action'] + "</action>\n"
@@ -90,7 +90,7 @@ def generate_accountTransaction(log, transactionNum):
 
 
 def generate_systemEvent(timestamp, server, transactionNum, command, username = None, stockSymbol = None, filename = None, funds = None):
-    timestamp_string = "        <timestamp>" + timestamp + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + timestamp.split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + server + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     command_string = "        <command>" + command + "</command>\n"
@@ -110,7 +110,7 @@ def generate_systemEvent(timestamp, server, transactionNum, command, username = 
 
 
 def generate_systemEvent(log, transactionNum):
-    timestamp_string = "        <timestamp>" + log['timestamp'].rstrip('.') + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + log['timestamp'].split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + log['server'] + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     command_string = "        <command>" + log['command'] + "</command>\n"
@@ -130,7 +130,7 @@ def generate_systemEvent(log, transactionNum):
 
 
 def generate_errorEvent(timestamp, server, transactionNum, command, username = None, stockSymbol = None, filename = None, funds = None, errorMessage = None):
-    timestamp_string = "        <timestamp>" + timestamp + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + timestamp.split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + server + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     command_string = "        <command>" + command + "</command>\n"
@@ -159,7 +159,7 @@ def generate_errorEvent(timestamp, server, transactionNum, command, username = N
 
 
 def generate_errorEvent(log, transactionNum):
-    timestamp_string = "        <timestamp>" + log['timestamp'].rstrip('.') + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + log['timestamp'].split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + log['server'] + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     command_string = "        <command>" + str(log['command']) + "</command>\n"
@@ -188,7 +188,7 @@ def generate_errorEvent(log, transactionNum):
 
 
 def generate_debugEvent(timestamp, server, transactionNum, command, username = None, stockSymbol = None, filename = None, funds = None, debugMessage = None):
-    timestamp_string = "        <timestamp>" + timestamp + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + timestamp.split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + server + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     command_string = "        <command>" + command + "</command>\n"
@@ -217,7 +217,7 @@ def generate_debugEvent(timestamp, server, transactionNum, command, username = N
 
 
 def generate_debugEvent(log, transactionNum):
-    timestamp_string = "        <timestamp>" + log['timestamp'].rstrip('.') + "</timestamp>\n"
+    timestamp_string = "        <timestamp>" + log['timestamp'].split('.')[0] + "</timestamp>\n"
     server_string = "        <server>" + log['server'] + "</server>\n"
     transactionNum_string = "        <transactionNum>" + transactionNum + "</transactionNum>\n"
     command_string = "        <command>" + log['command'] + "</command>\n"
