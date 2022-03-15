@@ -460,7 +460,7 @@ async def cancel_buy(userid):
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        if not user.__contains__("PendingBuy"):
+        if not user.__contains__("PendingBuy") or user['PendingBuy'] is None:
             return "No pending buy"
         else:
             now = time.time()
@@ -560,7 +560,7 @@ async def cancel_sell(userid):
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        if not user.__contains__("PendingSell"):
+        if not user.__contains__("PendingSell") or user['PendingSell'] is None:
             return "No pending sell"
         else:
             now = time.time()
