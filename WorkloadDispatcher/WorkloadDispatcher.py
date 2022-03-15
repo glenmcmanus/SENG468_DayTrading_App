@@ -81,7 +81,7 @@ def main():
             res = requests.put(req_str, json=data)
             res.close()
 
-            GenerateXML.generate_file(data['filename'], res.content)
+            GenerateXML.generate_file(data['filename'], json.loads(res.content))
 
         elif len(line) == 2:
             data['command']=line[0]

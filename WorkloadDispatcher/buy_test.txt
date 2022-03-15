@@ -1,6 +1,6 @@
 [1] ADD,foo,300
 [2] BUY,foo,S,276.83
-[3] sleep,61
+#[3] sleep,61
 [4] COMMIT_BUY,foo
 [5] BUY,foo,S,276.83
 [6] COMMIT_BUY,foo

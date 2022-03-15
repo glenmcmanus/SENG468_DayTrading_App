@@ -261,7 +261,6 @@ def generate_file():
 def generate_file(filename, dump):
     for log in dump:
         print(log)
-    return
 
     print("Generate ", filename, ".xml from:\n\n", dump)
 
