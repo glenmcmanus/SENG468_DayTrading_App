@@ -90,7 +90,7 @@ async def handle_request(request):
 def log_add_funds(userid, amount):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "ADD",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -105,7 +105,7 @@ def log_add_funds(userid, amount):
 def log_buy(userid, StockSymbol, amount):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "BUY",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -120,7 +120,7 @@ def log_buy(userid, StockSymbol, amount):
 def log_commit_buy(userid):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "COMMIT_BUY",
                "username": userid,
                "funds": "n/a" #do we need this?
@@ -134,7 +134,7 @@ def log_commit_buy(userid):
 def log_cancel_buy(userid):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "CANCEL_BUY",
                "username": userid,
                "funds": "n/a" #do we need this?
@@ -148,7 +148,7 @@ def log_cancel_buy(userid):
 def log_sell(userid, StockSymbol, amount):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "SELL",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -163,7 +163,7 @@ def log_sell(userid, StockSymbol, amount):
 def log_commit_sell(userid):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "COMMIT_SELL",
                "username": userid,
                "funds": "n/a" #do we need this?
@@ -177,7 +177,7 @@ def log_commit_sell(userid):
 def log_cancel_sell(userid):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "CANCEL_SELL",
                "username": userid,
                "funds": "n/a" #do we need this?
@@ -191,7 +191,7 @@ def log_cancel_sell(userid):
 def log_set_buy_amount(userid, StockSymbol, amount):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "SET_BUY_AMOUNT",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -206,7 +206,7 @@ def log_set_buy_amount(userid, StockSymbol, amount):
 def log_cancel_set_buy(userid, StockSymbol):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "CANCEL_SET_BUY",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -221,7 +221,7 @@ def log_cancel_set_buy(userid, StockSymbol):
 def log_set_buy_trigger(userid, StockSymbol, amount):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "SET_BUY_TRIGGER",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -236,7 +236,7 @@ def log_set_buy_trigger(userid, StockSymbol, amount):
 def log_set_sell_amount(userid, StockSymbol, amount):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "SET_SELL_AMOUNT",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -251,7 +251,7 @@ def log_set_sell_amount(userid, StockSymbol, amount):
 def log_set_sell_trigger(userid, StockSymbol, amount):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME,
+               "server": "default",
                "command": "SET_SELL_TRIGGER",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -266,7 +266,7 @@ def log_set_sell_trigger(userid, StockSymbol, amount):
 def log_cancel_set_sell(userid, StockSymbol):
     event = {  "LogType": "UserCommandType",
                "timestamp": str(time.time()),
-               "server": $NAME, 
+               "server": "default", 
                "command": "CANCEL_SET_SELL",
                "username": userid,
                "stockSymbol": StockSymbol,
@@ -281,7 +281,7 @@ def log_cancel_set_sell(userid, StockSymbol):
 def log_error(request, errorMessage):
     event = {  "LogType": "ErrorEventType",
                "timestamp": str(time.time()),
-               "server": $NAME, 
+               "server": "default", 
                "command": request[0],
                "username": request[1],
                "errorMessage": errorMessage
@@ -295,7 +295,7 @@ def log_error(request, errorMessage):
 def log_transaction(userid, funds):
     event = {  "LogType": "AccountTransactionType",
                "timestamp": str(time.time()),
-               "server": $NAME, 
+               "server": "default", 
                "username": userid,
                "funds": funds
                  }
@@ -308,7 +308,7 @@ def log_transaction(userid, funds):
 def log_quote():
     event = {  "LogType": "QuoteServerType",
                "timestamp": str(time.time()),
-               "server": $NAME, 
+               "server": "default", 
                "price": price,
                "stockSymbol": stockSymbol,
                "username": userid,
