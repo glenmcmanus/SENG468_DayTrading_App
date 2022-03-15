@@ -40,7 +40,7 @@ def main():
         print("You need to pass in the file for dispatch")
         return
 
-    print(requests.get('http://localhost:9000/DEBUG_DROP', timeout=1000))
+    #print(requests.get('http://localhost:9000/DEBUG_DROP', timeout=1000))
 
     f = open(sys.argv[1])
 
@@ -53,11 +53,11 @@ def main():
         line = line.rstrip().split(' ')[1].split(',')
 
         if line[0].lower() == 'sleep':
-            print('Sleeping for ', line[1], 's')
+            #print('Sleeping for ', line[1], 's')
             time.sleep(int(line[1]))
             continue
 
-        print("line after split: ", line)
+        #print("line after split: ", line)
         req_str = 'http://localhost:9000/' + line[0].lower()
 
         if len(line) > 1:
@@ -104,10 +104,10 @@ def main():
             data['stock']=line[2]
             data['value']=line[3]
             
-        print(req_str)
-        print(data)
+        #print(req_str)
+        #print(data)
         res = requests.put(req_str, json=data)
-        print(res, res.content)
+        #print(res, res.content)
         res.close()
 
 if __name__ == "__main__":

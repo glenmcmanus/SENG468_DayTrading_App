@@ -89,6 +89,10 @@ async def handle_request(request):
         return await cancel_set_sell(request[1], request[2])
 
     else:
+        if Const.TRANSACTION_BYTE_TO_STR.__contains__(request[0]):
+            request[0] = Const.TRANSACTION_BYTE_TO_STR[request[0]]
+        else:
+            request[0] = "Unknown"
         log_error(request, "Error: Unexpected request")
         return "Unexpected request: " + str(request[0])
 
