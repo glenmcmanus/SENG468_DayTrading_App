@@ -17,7 +17,7 @@ router.post('/', (req, res) => {
 router.put('/', (req, res) => {
     console.log(req.body);
 
-    const query = CONST.CANCEL_SET_SELL + ',' + req.body['userID'] + ',' + req.body['stock'] + ',' + req.body['amount'];
+    const query = CONST.CANCEL_SET_SELL + ',' + req.body['userID'] + ',' + req.body['stock'] + ',' + req.body['value'];
     transaction_client.enqueue(req.body["userID"], query, res);
 });
 
