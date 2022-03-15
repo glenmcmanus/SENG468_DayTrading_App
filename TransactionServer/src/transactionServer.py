@@ -22,7 +22,7 @@ async def handle_user_request(reader, writer):
             writer.write(''.encode())
             await writer.drain()
             continue
-            
+
         response = message[0] + ',' + process_request(message[0], message[1])
         log_request(response)
         
@@ -34,7 +34,7 @@ async def handle_user_request(reader, writer):
         response = message[1] + ',' + response
 
         print(f"Send: {response!r}")
-            writer.write(response.encode())
+        writer.write(response.encode())
         await writer.drain()
 
 
