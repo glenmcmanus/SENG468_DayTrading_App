@@ -476,7 +476,7 @@ async def cancel_buy(userid):
                 user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": now}}})
                 return "ok"
             else:
-                log_error({"CANCEL_BUY", userid}, "Error: Cancel could not be completed")
+                log_error(["CANCEL_BUY", userid], "Error: Cancel could not be completed")
                 print("User ", userid, " cancel could not be completed", flush=True)
                 return "CANCELERRORBUY"
     else:
@@ -576,7 +576,7 @@ async def cancel_sell(userid):
                 user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSell": {"Timestamp": now}}})
                 return "ok"
             else:
-                log_error({"CANCEL_SELL", userid}, "Error: Cancel could not be completed")
+                log_error(["CANCEL_SELL", userid], "Error: Cancel could not be completed")
                 print("User ", userid, " cancel could not be completed", flush=True)
                 return "CANCELERRORSELL"        
     else:
