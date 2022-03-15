@@ -65,6 +65,9 @@ async function register(userid) {
 async function dropAll() {
     if(User != null)
         await User.deleteMany({});
+
+    if(EventLog != null)
+        await EventLog.deleteMany({});
 }
 
 async function dumpLog(userid='') {

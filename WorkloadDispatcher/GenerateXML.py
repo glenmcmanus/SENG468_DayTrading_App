@@ -259,11 +259,6 @@ def generate_file():
     f.close()
 
 def generate_file(filename, dump):
-    for log in dump:
-        print(log)
-
-    print("Generate ", filename, ".xml from:\n\n", dump)
-
     f = open(filename+'.xml', "w")
     f.write("<?xml version=\"1.0\"?>\n")
     f.write("<log>\n")
@@ -272,17 +267,17 @@ def generate_file(filename, dump):
     for log in dump:
         log_type = log['LogType']
         if log_type == 'AccountTransactionType':
-            f.write(generate_accountTransaction(log, transaction_num))
+            f.write(generate_accountTransaction(log, str(transaction_num)))
         elif log_type == 'DebugType':
-            f.write(generate_debugEvent(log, transaction_num))
+            f.write(generate_debugEvent(log, str(transaction_num)))
         elif log_type == 'ErrorEventType':
-            f.write(generate_errorEvent(log, transaction_num))
+            f.write(generate_errorEvent(log, str(transaction_num)))
         elif log_type == 'QuoteServerType':
-            f.write(generate_quoteServer(log, transaction_num))
+            f.write(generate_quoteServer(log, str(transaction_num)))
         elif log_type == 'SystemEventType':
-            f.write(generate_systemEvent(log, transaction_num))
+            f.write(generate_systemEvent(log, str(transaction_num)))
         elif log_type == 'UserCommandType':
-            f.write(generate_userCommand(log, transaction_num))
+            f.write(generate_userCommand(log, str(transaction_num)))
         transaction_num += 1
 
 

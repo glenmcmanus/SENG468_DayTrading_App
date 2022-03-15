@@ -23,10 +23,6 @@ async def handle_user_request(reader, writer):
             await writer.drain()
             continue
 
-        response = message[0] + ',' + process_request(message[0], message[1])
-        log_request(response)
-        
-
         message[0] = int(message[0])
 
         response = await handle_request(message)
@@ -425,7 +421,7 @@ async def commit_buy(userid):
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        if not user.__contains__("PendingBuy"):
+        if not user.__contains__("PendingBuy") or user['PendingBuy'] is None:
             return "No pending buy"
         else:
             now = time.time()
