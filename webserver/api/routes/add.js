@@ -17,7 +17,7 @@ router.post('/', (req, res) => {
 router.put('/', (req, res) => {
     console.log(req.body);
 
-    const query = CONST.ADD + ',' + req.body['userID'] + ',' + req.body['amount'];
+    const query = CONST.ADD + ',' + req.body['userID'] + ',' + req.body['value'];
     transaction_client.enqueue(req.body['userID'], query, res);
 });
 
