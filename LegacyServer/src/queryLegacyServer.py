@@ -55,8 +55,10 @@ async def handle_request(reader, writer):
 
         if (len(message) < 2):
             writer.write(''.encode())
-        else:
-            response = message[0] + ',' + process_request(message[0], message[1])
+            await writer.drain()
+            continue
+
+        response = message[0] + ',' + process_request(message[0], message[1])
         log_request(response)
 
         print(f"Send: {response!r}")
