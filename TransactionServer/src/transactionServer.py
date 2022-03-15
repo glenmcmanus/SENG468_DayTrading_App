@@ -521,7 +521,7 @@ async def commit_sell(userid):
     print(f"DB user result: {user!r}", flush=True)
 
     if user is not None:
-        if not user.__contains__("PendingSell"):
+        if not user.__contains__("PendingSell") or user['PendingSell'] is None:
             return "No pending sell"
         else:
         # print("User ", userid, " committed buy command", flush=True)
@@ -584,6 +584,7 @@ async def cancel_sell(userid):
 
 
 async def set_buy_amount(userid, stock_symbol, amount):
+    amount = float(amount)
     print(db.list_collection_names())
     print(list(db.User.find()))
 
