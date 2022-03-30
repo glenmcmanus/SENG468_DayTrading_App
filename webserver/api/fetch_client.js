@@ -1,13 +1,10 @@
 var net = require('net');
 
-const fetch_ip = process.env.FETCH_IP;
-const fetch_port = process.env.FETCH_PORT;
-
 var fetch_buffer = {}
 var fetch_client = new net.Socket();
 
 function connect() {
-    fetch_client.connect(fetch_port, fetch_ip, function() {
+    fetch_client.connect(process.env.FETCH_PORT, 'fetch_server', function() {
         console.log('Connected to fetch service');
     });
 }

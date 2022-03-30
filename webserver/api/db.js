@@ -1,5 +1,10 @@
-const mongoose = require("mongoose");
 require('dotenv').config()
+const mongoose = require("mongoose");
+const dns = require('dns')
+
+const options = {
+  family: 4,
+};
 
 const url = process.env.DATABASEURL;
 
@@ -42,6 +47,9 @@ function connectDB () {
 }
 
 async function register(userid) {
+    if(User == null)
+        return "DB not connected!";
+
     const existence = await User.find({UserID:userid});
     if(existence.length > 0)
         return "User exists";

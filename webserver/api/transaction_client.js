@@ -1,13 +1,10 @@
 var net = require('net');
 
-const transaction_ip = process.env.TRANSACTION_IP;
-const transaction_port = process.env.TRANSACTION_PORT;
-
 var transaction_buffer = {}
 var transaction_client = new net.Socket();
 
 function connect() {
-    transaction_client.connect(transaction_port, transaction_ip, function() {
+    transaction_client.connect(process.env.TRANSACTION_PORT, 'transaction_server', function() {
         console.log('Connected to transaction service')
     });
 }

@@ -82,7 +82,7 @@ async def service_loop():
         my_port = 8888
 
     server = await asyncio.start_server(
-        handle_request, my_ip, my_port)
+        handle_request, '', my_port)
 
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     print(f'Serving on {addrs}', flush=True)

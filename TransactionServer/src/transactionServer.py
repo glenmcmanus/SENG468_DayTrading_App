@@ -4,8 +4,13 @@ import os
 import Common.src.Constants as Const
 import pymongo
 import time
+#import dns.resolver
 
-db_client = pymongo.MongoClient(os.environ["M_ROUTER1_IP"], 27017)
+#answers = dns.resolver.resolve(os.environ["PROXY_HOSTNAME"])
+#for rdata in answers:
+#    print('Host', rdata.exchange, 'has preference', rdata.preference)
+
+db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
 db = db_client.DayTrading
 
 async def handle_user_request(reader, writer):
@@ -787,7 +792,7 @@ async def main():
    #         os.environ["FETCH_IP"], os.environ["FETCH_PORT"])
 
     server = await asyncio.start_server(
-        handle_user_request, my_ip, my_port)
+        handle_user_request, '', my_port)
 
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     print(f'Serving on {addrs}', flush=True)

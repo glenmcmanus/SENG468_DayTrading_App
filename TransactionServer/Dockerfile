@@ -11,7 +11,7 @@ WORKDIR /usr/transaction
 
 # install dependencies
 RUN pip install pymongo
-
+RUN pip install dnspython
 # copy the content of the local src directory to the working directory
 
 RUN mkdir -p .

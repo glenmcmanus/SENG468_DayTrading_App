@@ -2,40 +2,68 @@ version: "3.9"
 
 services:
 
+  #load balancer
+  load_balancer:
+    image: load_balancer:latest
+    build:
+      context: ./nginx/
+      dockerfile: Nginx.Dockerfile
+    container_name: load_balancer
+    #depends_on:
+      #- fetch_server
+      #- transaction_server
+    ports:
+      - 5100:5100
+      - 5200
+      - 5300
+      - 5400
+    networks:
+      - backend
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  #fetch
   fetch_server:
-    image: fetch_server
+    image: fetch_server:latest
     build:
       context: ./LegacyServer
       dockerfile: ./Dockerfile
     depends_on:
       - "router1"
+    #deploy:
+    #  replicas: 3
     env_file:
       - .env
       - ./LegacyServer/legacy.env
     ports:
-      - ${FETCH_PORT}:${FETCH_PORT}
+      - ${FETCH_PORT}
     networks:
-      backend:
-        ipv4_address: ${FETCH_IP}
+      - backend
 
+  #transaction
   transaction_server:
-    image: transaction_server
+    image: transaction_server:latest
     build:
       context: ./
       dockerfile: ./TransactionServer/Dockerfile
     depends_on:
       - "router1"
+    #deploy:
+    #  replicas: 3
     env_file:
       - .env
       - ./TransactionServer/transaction.env
+    links:
+      - router1
     ports:
-      - ${TRANSACTION_PORT}:${TRANSACTION_PORT}
+      - ${TRANSACTION_PORT}
     networks:
-      backend:
-        ipv4_address: ${TRANSACTION_IP}
+      - backend
 
+  #webserver
   web_server:
-    image: webserver
+    image: webserver:latest
     build:
       context: ./webserver
       dockerfile: ./Dockerfile
@@ -43,18 +71,24 @@ services:
       - "router1"
       - "fetch_server"
       - "transaction_server"
+    deploy:
+      replicas: 3
     env_file:
       - .env
       - ./webserver/webserver.env
+    links:
+      - load_balancer
+      - router1
+      - transaction_server
+      - fetch_server
     ports:
-      - ${WEB_PORT}:${WEB_PORT}
+      - ${WEB_PORT}
     networks:
-      backend:
-        ipv4_address: ${WEB_IP}
+      - backend
 
   #mongo routers
   router1:
-    image: mongo_router
+    image: mongo_router:latest
     build:
       context: ./Mongo/Router
       dockerfile: ./Dockerfile
@@ -67,12 +101,11 @@ services:
     ports:
       - ${M_ROUTER1_PORT}:27017
     networks:
-      backend:
-        ipv4_address: ${M_ROUTER1_IP}
+      - backend
     restart: always
 
   router2:
-    image: mongo_router
+    image: mongo_router:latest
     container_name: router2
     command: mongos --port 27017 --configdb config-srv/cfg_srv1:27017,cfg_srv2:27017,cfg_srv3:27017 --bind_ip_all
     depends_on:
@@ -84,13 +117,12 @@ services:
     ports:
       - ${M_ROUTER2_PORT}:27017
     networks:
-      backend:
-        ipv4_address: ${M_ROUTER2_IP}
+      - backend
     restart: always
 
   #mongo Config Servers
   cfg_srv1:
-    image: mongo_cfg
+    image: mongo_cfg:latest
     build:
       context: ./Mongo/Config
       dockerfile: ./Dockerfile
@@ -104,12 +136,11 @@ services:
     ports:
       - 27119:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.7
+      - backend
     restart: always
 
   cfg_srv2:
-    image: mongo_cfg
+    image: mongo_cfg:latest
     container_name: cfg_srv2
     command: mongod --port 27017 --configsvr --replSet config-srv
     environment:
@@ -117,12 +148,11 @@ services:
     ports:
       - 27120:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.8
+      - backend
     restart: always
 
   cfg_srv3:
-    image: mongo_cfg
+    image: mongo_cfg:latest
     build:
       context: ./Mongo/Config
       dockerfile: ./Dockerfile
@@ -133,15 +163,14 @@ services:
     ports:
       - 27121:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.9
+      - backend
     restart: always
 
   #mongo Shards
 
   #Shard1
   shard1a:
-    image: mongo_shard
+    image: mongo_shard:latest
     build:
       context: ./Mongo/Shard
       dockerfile: ./Dockerfile
@@ -157,12 +186,11 @@ services:
     ports:
       - 27122:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.10
+      - backend
     restart: always
 
   shard1b:
-    image: mongo_shard
+    image: mongo_shard:latest
     container_name: shard1b
     command: mongod --port 27017 --shardsvr --replSet shard1
     depends_on:
@@ -173,12 +201,11 @@ services:
     ports:
       - 27123:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.11
+      - backend
     restart: always
 
   shard1c:
-    image: mongo_shard
+    image: mongo_shard:latest
     container_name: shard1c
     command: mongod --port 27017 --shardsvr --replSet shard1
     depends_on:
@@ -189,13 +216,12 @@ services:
     ports:
       - 27124:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.12
+      - backend
     restart: always
 
   #Shard2
   shard2a:
-    image: mongo_shard
+    image: mongo_shard:latest
     container_name: shard2a
     command: mongod --port 27017 --shardsvr --replSet shard2
     depends_on:
@@ -208,12 +234,11 @@ services:
     ports:
       - 27125:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.13
+      - backend
     restart: always
 
   shard2b:
-    image: mongo_shard
+    image: mongo_shard:latest
     container_name: shard2b
     command: mongod --port 27017 --shardsvr --replSet shard2
     depends_on:
@@ -224,12 +249,11 @@ services:
     ports:
       - 27126:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.14
+      - backend
     restart: always
 
   shard2c:
-    image: mongo_shard
+    image: mongo_shard:latest
     container_name: shard2c
     command: mongod --port 27017 --shardsvr --replSet shard2
     depends_on:
@@ -240,13 +264,12 @@ services:
     ports:
       - 27127:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.15
+      - backend
     restart: always
 
   #Shard3
   shard3a:
-    image: mongo_shard
+    image: mongo_shard:latest
     container_name: shard3a
     command: mongod --port 27017 --shardsvr --replSet shard3
     depends_on:
@@ -259,12 +282,11 @@ services:
     ports:
       - 27128:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.16
+      - backend
     restart: always
 
   shard3b:
-    image: mongo_shard
+    image: mongo_shard:latest
     container_name: shard3b
     command: mongod --port 27017 --shardsvr --replSet shard3
     depends_on:
@@ -275,12 +297,11 @@ services:
     ports:
       - 27129:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.17
+      - backend
     restart: always
 
   shard3c:
-    image: mongo_shard
+    image: mongo_shard:latest
     container_name: shard3c
     command: mongod --port 27017 --shardsvr --replSet shard3
     depends_on:
@@ -291,8 +312,7 @@ services:
     ports:
       - 27130:27017
     networks:
-      backend:
-        ipv4_address: 10.5.0.18
+      - backend
     restart: always
 
 networks:
