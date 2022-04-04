@@ -83,14 +83,8 @@ app.use(function(err, req, res, next) {
 
 //service connections
 
-setTimeout(delay_service_connect, 20);
-
-function delay_service_connect()
-{
-    redis.connect();
-    mgdb.connectDB();
-}
-
+redis.connect();
+mgdb.connectDB();
 transaction_client.connect();
 fetch_client.connect();
 

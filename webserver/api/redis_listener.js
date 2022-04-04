@@ -5,11 +5,9 @@ const {
 } = require('worker_threads');
 
 if (isMainThread) {
-    const streams = ['out'];
-
     var stream_listener = new Promise((resolve, reject) => {
             const worker = new Worker(__filename, {
-            workerData: streams
+            workerData: redis.streams
         });
 
         worker.on('message', (resolve) => {
@@ -31,11 +29,6 @@ exports.stream_listener = stream_listener;
 
 } else {
     const streams = workerData;
-    var currentId = streams.map(init_ids);
-
-    function init_ids() {
-        return '0-0';
-    }
 
     async function listen()
     {
@@ -43,15 +36,17 @@ exports.stream_listener = stream_listener;
         for(;;) {
             for(let i = 0; i < streams.length;) {
                 try {
-                    let response = await redis.client.xRead(
+                    let response = await redis.client.xReadGroup(
                         app.redisClient.commandOptions({
                             isolated: true
-                        }), [
-                        // XREAD can read from multiple streams, starting at a
-                        // different ID for each...
+                       }),
+                        redis.group,
+                        consumerName, [
+                          // XREADGROUP can read from multiple streams, starting at a
+                          // different ID for each...
                         {
                             key: streams[i],
-                            id: currentId[i]
+                            id: '>'
                         }
                         ], {
                             // Read 1 entry at a time, block for 5 seconds if there are none.
@@ -62,10 +57,13 @@ exports.stream_listener = stream_listener;
 
                     if (response) {
                         no_response = false;
-                        currentId[i] = response[0].messages[0].id;
                         let response = JSON.stringify(response);
                         console.log(response);
                         parentPort.postMessage(response);
+
+                        //todo wait until response is handled before acking
+                        const entryId = response[0].messages[0].id;
+                        await redis.client.xAck(streams[i], redis.group, entryId);
                     } else {
                         // Response is null, we have read everything that is
                         // in the stream right now...
