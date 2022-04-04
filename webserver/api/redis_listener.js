@@ -1,150 +1,89 @@
-require('dotenv').config()
-const redisClient = require('./redis_client');
+const redis = require('./redis_client')
 
 const {
   Worker, isMainThread, parentPort, workerData
 } = require('worker_threads');
 
-const redis = require('./redis_client');
-
-
 if (isMainThread) {
+    const streams = ['out'];
 
-    console.log|("Starting listener from main thread");
-
-    function startListener() {
-        const worker = new Worker(__filename);
+    var stream_listener = new Promise((resolve, reject) => {
+            const worker = new Worker(__filename, {
+            workerData: streams
+        });
 
         worker.on('message', (resolve) => {
-            //redisClient.response_buffer[resolve[0].messages[0].id].send('it works!');
+            console.log("Main thread resolved:");
+            console.log(resolve);
         });
 
-        worker.on('error', (reject) => {
-            console.log(reject);
-        });
+        worker.on('error', reject);
 
         worker.on('exit', (code) => {
             if (code !== 0) {
-                reject(new Error(`Worker stopped with exit code ${code}`));
+              reject(new Error(`Worker stopped with exit code ${code}`));
             }
         });
-    }
 
-    async function listenForId(stream, id) {
-        for(;;)
-        {
-            try {
-                let response = await redisClient.client.xReadGroup(
-                    redisClient.client.commandOptions({
-                        isolated: true
-                    }),
-                    'web_api',
-                    redisClient.consumer_name, [
-                        // XREADGROUP can read from multiple streams, starting at a
-                        // different ID for each...
-                    {
-                        key: stream,
-                        id: '>'
-                    }
-                    ], {
-                        // Read 1 entry at a time, block for 5 seconds if there are none.
-                        COUNT: 1,
-                        BLOCK: 5000
-                        }
-                    );
+    });
 
-                if (response) {
-                    no_response = false;
-
-                    console.log(response);
-
-                    if(response[0].messages[0].id == id);
-                    {
-                        redisClient.client.xAck(stream, redisClient.group, id);
-                        return response;
-                    }
-
-                } else {
-                    // Response is null, we have read everything that is
-                    // in the stream right now...
-                    //console.log('No new stream entries.');
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-    }
-
-exports.startListener = startListener;
-exports.listenForId = listenForId;
+exports.stream_listener = stream_listener;
 
 } else {
-    console.log("In worker, about to start listening");
+    const streams = workerData;
+    var currentId = streams.map(init_ids);
 
-    const redis = require('redis');
-    const client = redis.createClient({ url: process.env.REDIS_URL });
-
-    listen();
+    function init_ids() {
+        return '0-0';
+    }
 
     async function listen()
     {
-        await client.connect();
-        var sleep = 0;
         no_response = true;
-        for(let i = 0; i < redisClient.streams.length;) {
-            console.log("Listening to stream " + redisClient.streams[i]);
-            try {
-                let response = await client.xReadGroup(
-                    redisClient.client.commandOptions({
-                        isolated: true
-                    }),
-                    'web_api',
-                    redisClient.consumer_name, [
-                        // XREADGROUP can read from multiple streams, starting at a
+        for(;;) {
+            for(let i = 0; i < streams.length;) {
+                try {
+                    let response = await redis.client.xRead(
+                        app.redisClient.commandOptions({
+                            isolated: true
+                        }), [
+                        // XREAD can read from multiple streams, starting at a
                         // different ID for each...
-                    {
-                        key: redisClient.streams[i],
-                        id: '>'
-                    }
-                    ], {
-                        // Read 1 entry at a time, block for 5 seconds if there are none.
-                        COUNT: 1,
-                        BLOCK: sleep
-                    }
-                );
+                        {
+                            key: streams[i],
+                            id: currentId[i]
+                        }
+                        ], {
+                            // Read 1 entry at a time, block for 5 seconds if there are none.
+                            COUNT: 1,
+                            //BLOCK: 5000
+                        }
+                    );
 
-                if (response) {
-                    no_response = false;
-
-                    console.log(response);
-
-                    const entryId = response[0].messages[0].id;
-
-                    if(entryId in redisClient.response_buffer);
-                    {
-                        //
+                    if (response) {
+                        no_response = false;
+                        currentId[i] = response[0].messages[0].id;
+                        let response = JSON.stringify(response);
+                        console.log(response);
                         parentPort.postMessage(response);
-                        client.xAck(redisClient.streams[i], redisClient.group, entryId);
+                    } else {
+                        // Response is null, we have read everything that is
+                        // in the stream right now...
+                        console.log('No new stream entries.');
+                        res.send("No orders exist in the stream.")
                     }
-
-                } else {
-                    // Response is null, we have read everything that is
-                    // in the stream right now...
-                    //console.log('No new stream entries.');
+                } catch (err) {
+                    console.error(err);
+                    res.send("Failed to read order stream.");
                 }
-            } catch (err) {
-                console.error(err);
-                parentPort.postMessage(err);
             }
 
-            i = (i + 1) % redisClient.streams.length;
-            if(i == redisClient.streams.length - 1) {
+            i = (i + 1) % streams.length;
+            if(i == 0) {
                 if(no_response == true)
-                    sleep = 5;
-                else {
+                    await sleep(5);
+                else
                     no_response = true;
-                    sleep = 0;
-                }
             }
         }
     }
