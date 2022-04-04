@@ -1,7 +1,7 @@
 require('dotenv').config()
 const mongoose = require("mongoose");
 const dns = require('dns')
-const redisClient = require('./redis_client.js')
+const redis = require('./redis_client.js')
 
 
 const options = {
@@ -52,18 +52,18 @@ async function register(userid) {
     if(User == null)
         return "DB not connected!";
 
-    if(redisClient.hashExists('user', userid) == true)
+    if(redis.hexists('user', userid))
         return "User exists";
 
     const existence = await User.find({UserID:userid});
     if(existence.length > 0)
     {
-        redisClient.setHash('user', userid, existence);
+        redis.hset('user', userid, existence);
         return "User exists";
     }
 
     const user = new User({UserID: userid, AccountBalance:0.00});
-    redisClient.setHash('user', userid, user);
+    redis.hset('user', userid, user);
 
     console.log("Pre-save " + userid + ":\n\n" + JSON.stringify(user));
 
