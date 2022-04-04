@@ -1,4 +1,6 @@
 const CONST = require("../public/javascripts/constants");
+const redis = require('../redis_client');
+const mongo = require('../db')
 
 var express = require('express');
 var router = express.Router();
@@ -14,7 +16,20 @@ router.post('/', (req, res) => {
   
 router.put('/', (req, res) => {
     console.log(req.body);
-    res.send("Summary for " + req.body['userID']);
+
+    if(redis.hashExists('user', req.body['userID']))
+    {
+        res.send(redis.getHash('user', req.body['userID']));
+    }
+    else
+    {
+        user = db.findUser(req.body['userID']);
+        if(user.length > 0)
+            res.send("Summary for " + req.body['userID']);
+        else
+            res.send("Summary for " + req.body['userID']);
+    }
+
 });
 
 module.exports = router;

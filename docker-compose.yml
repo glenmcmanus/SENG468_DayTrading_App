@@ -86,6 +86,20 @@ services:
     networks:
       - backend
 
+#redis
+  redis:
+    image: dt_redis
+    build:
+      context: ./Redis
+      dockerfile: ./Dockerfile
+    container_name: cache
+    expose:
+      - 6379
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    networks:
+      - backend
+
   #mongo routers
   router1:
     image: mongo_router:latest
