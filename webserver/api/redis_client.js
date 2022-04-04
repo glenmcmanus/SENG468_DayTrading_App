@@ -1,8 +1,10 @@
 require('dotenv').config()
-import { commandOptions } from 'redis';
+const redis = require('redis');
+const listener = require('./redis_listener');
+
 const client = redis.createClient({ url: process.env.REDIS_URL });
 
-function connect() {
+async function connect() {
     await client.connect();
 }
 
@@ -23,7 +25,7 @@ async function hashExists(collection, key) {
 }
 
 function delHash(collection, key) {
-    return await client.hdel(collection, key, function(err) {
+    return client.hdel(collection, key, function(err) {
         if(err) {
             console.log(err)
         }

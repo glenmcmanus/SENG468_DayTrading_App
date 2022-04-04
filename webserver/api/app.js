@@ -82,8 +82,15 @@ app.use(function(err, req, res, next) {
 });
 
 //service connections
-redis.connect();
-mgdb.connectDB();
+
+setTimeout(delay_service_connect, 20);
+
+function delay_service_connect()
+{
+    redis.connect();
+    mgdb.connectDB();
+}
+
 transaction_client.connect();
 fetch_client.connect();
 
