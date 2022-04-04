@@ -1,11 +1,19 @@
 require('dotenv').config()
 const redis = require('redis');
-const listener = require('./redis_listener');
-
 const client = redis.createClient({ url: process.env.REDIS_URL });
+
+const group = 'web_api';
+const streams = ['out'];
+
 
 async function connect() {
     await client.connect();
+
+    streams.forEach(stream => {
+            createConsumerGroup(stream, group);
+    });
+
+    await writeStream(streams[0], 'hello world');
 }
 
 async function setHash(collection, key, json_value) {
@@ -38,15 +46,25 @@ async function writeStream(stream, payload) {
     });
 }
 
-async function createConsumerGroup(stream) {
-
+async function createConsumerGroup(stream, group) {
+    try {
+        await client.xGroupCreate(stream, group, '0', {
+            MKSTREAM: true
+        });
+        console.log('Created consumer group.');
+    } catch (e) {
+        console.log('Consumer group already exists, skipped creation.');
+    }
 }
 
 async function shutdown() {
     await client.quit();
 }
 
+exports.client = client;
 exports.connect = connect;
 exports.getHash = getHash;
 exports.setHash = setHash;
 exports.hashExists = hashExists;
+exports.streams = streams;
+exports.writeStream = writeStream;
