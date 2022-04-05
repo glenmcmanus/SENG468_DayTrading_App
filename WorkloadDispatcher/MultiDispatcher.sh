@@ -12,7 +12,7 @@ do
   then
     wait ${my_pids[$i]}
     python3 WorkloadDispatcher.py $f &
-    my_pids+=(&!)
+    my_pids[$i]=(&!)
   else
     python3 WorkloadDispatcher.py $f &
     my_pids+=(&!)
