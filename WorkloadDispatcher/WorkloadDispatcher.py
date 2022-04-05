@@ -3,8 +3,11 @@ import time
 
 import requests
 import sys
+import os
 
 import GenerateXML
+
+import threading
 
 query_param_definition = {
     'ADD':['userid','amount'],
@@ -43,6 +46,28 @@ def main():
     #print(requests.get('http://localhost:5100/DEBUG_DROP', timeout=1000))
 
     f = open(sys.argv[1])
+
+    if len(sys.argv) > 2 and sys.argv[2] == '-p':
+        user_work = {}
+        for line in f:
+            line = line.rstrip().split(' ')[1].split(',')
+
+            if not user_work.__contains__(line[1]):
+                user_work[line[1]] = []
+
+            user_work[line[1]].append(','.join(line))
+
+        path = '_' + sys.argv[1].split('.')[0]
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        for u in user_work:
+            f = open(path + '/' + u, "w")
+            for line in user_work[u]:
+                f.write(line)
+            f.close()
+
+        return
 
     users = []
 
