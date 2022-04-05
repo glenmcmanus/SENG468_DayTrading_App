@@ -64,7 +64,7 @@ def main():
         for u in user_work:
             f = open(path + '/' + u, "w")
             for line in user_work[u]:
-                f.write(line)
+                f.write('$ ' + line +'\n')
             f.close()
 
         return
