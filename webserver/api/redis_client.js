@@ -1,19 +1,26 @@
 require('dotenv').config()
 const redis = require('redis');
 const client = redis.createClient({ url: process.env.REDIS_URL });
-
+const getId = require('docker-container-id');
+var consumerName = null;
 const group = 'web_api';
 const streams = ['out'];
 
-
 async function connect() {
+
+    console.log(process.argv[2]);
+
     await client.connect();
 
     streams.forEach(stream => {
             createConsumerGroup(stream, group);
     });
 
+    consumerName = await getId();
+    console.log("Container name:" + consumerName);
+
     await writeStream(streams[0], 'hello world');
+
 }
 
 async function setHash(collection, key, json_value) {
@@ -68,3 +75,4 @@ exports.setHash = setHash;
 exports.hashExists = hashExists;
 exports.streams = streams;
 exports.writeStream = writeStream;
+exports.consumerName = consumerName;
