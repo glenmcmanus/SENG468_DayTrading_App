@@ -1,11 +1,26 @@
 import asyncio
+import datetime
 import os
 import Common.src.Constants as Const
-import Common.src.Logging as Logging
 import Common.src.RedisStreams as RedisStreams
 import pymongo
 import time
-import TransactionServer.src.cache
+import threading
+
+
+def handle_stream_in(message):
+    print(message)
+    RedisStreams.client.xack('in', 'tx', message.id)
+
+
+redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('in', 'tx', handle_stream_in,))
+redis_listener.start()
+
+RedisStreams.write_to_stream('out', 'hello from transaction server ' + RedisStreams.container_name)
+
+db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
+db = db_client.DayTrading
+
 
 async def handle_user_request(reader, writer):
     while True:
@@ -13,7 +28,7 @@ async def handle_user_request(reader, writer):
         message = data.decode()
         addr = writer.get_extra_info('peername')
 
-        #print(f"Received {message!r} from {addr!r}", flush=True)
+        print(f"Received {message!r} from {addr!r}", flush=True)
 
         message = message.split(',')
         
@@ -39,61 +54,306 @@ async def handle_request(request):
 #request[1] = userid
 #request[2] = funds/stocksymbol
 #request[3] = amount
-    if request[b'command'] == b'ADD':
-        Logging.log_add_funds(request[b'userID'], request[b'value'])
-        return await add_funds(request[b'userID'].decode("utf-8"), request[b'value'].decode("utf-8"))
+    if request[0] == Const.ADD:
+        log_add_funds(request[1], request[2])
+        return await add_funds(request[1], request[2])
 
-    elif request[b'command'] == b'BUY':
-        Logging.log_buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
-        return await buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+    elif request[0] == Const.BUY:
+        log_buy(request[1], request[2], request[3])
+        return await buy(request[1], request[2], request[3])
 
-    elif request[b'command'] == b'COMMIT_BUY':
-        Logging.log_commit_buy(request[b'userID'].decode("utf-8") )
-        return await commit_buy(request[b'userID'].decode("utf-8") )
+    elif request[0] == Const.COMMIT_BUY:
+        log_commit_buy(request[1])
+        return await commit_buy(request[1])
 
-    elif request[b'command'] == b'CANCEL_BUY':
-        Logging.log_cancel_buy(request[b'userID'].decode("utf-8"))
-        return await cancel_buy(request[b'userID'].decode("utf-8"))
+    elif request[0] == Const.CANCEL_BUY:
+        log_cancel_buy(request[1])
+        return await cancel_buy(request[1])
 
-    elif request[b'command'] == b'SELL':
-        Logging.log_sell(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
-        return await sell(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+    elif request[0] == Const.SELL:
+        log_sell(request[1], request[2], request[3])
+        return await sell(request[1], request[2], request[3])
 
-    elif request[b'command'] == b'COMMIT_SELL':
-        Logging.log_commit_sell(request[b'userID'].decode("utf-8"))
-        return await commit_sell(request[b'userID'].decode("utf-8"))
+    elif request[0] == Const.CANCEL_SELL:
+        log_cancel_sell(request[1])
+        return await cancel_sell(request[1])
 
-    elif request[b'command'] == b'CANCEL_SELL':
-        Logging.log_cancel_sell(request[b'userID'].decode("utf-8"))
-        return await cancel_sell(request[b'userID'].decode("utf-8"))
+    elif request[0] == Const.SET_BUY_AMOUNT:
+        log_set_buy_amount(request[1], request[2], request[3])
+        return await set_buy_amount(request[1], request[2], request[3])
 
-    elif request[b'command'] == b'SET_BUY_AMOUNT':
-        Logging.log_set_buy_amount(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
-        return await set_buy_amount(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+    elif request[0] == Const.CANCEL_SET_BUY:
+        log_cancel_set_buy(request[1], request[2])
+        return await cancel_set_buy(request[1], request[2])
 
-    elif request[b'command'] == b'CANCEL_SET_BUY':
-        Logging.log_cancel_set_buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"))
-        return await cancel_set_buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"))
+    elif request[0] == Const.SET_BUY_TRIGGER:
+        log_set_buy_trigger(request[1], request[2], request[3])
+        return await set_buy_trigger(request[1], request[2], request[3])
 
-    elif request[b'command'] == b'SET_BUY_TRIGGER':
-        Logging.log_set_buy_trigger(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
-        return await set_buy_trigger(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+    elif request[0] == Const.SET_SELL_AMOUNT:
+        log_set_sell_amount(request[1], request[2], request[3])
+        return await set_sell_amount(request[1], request[2], request[3])
 
-    elif request[b'command'] == b'SET_SELL_AMOUNT':
-        Logging.log_set_sell_amount(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
-        return await set_sell_amount(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+    elif request[0] == Const.SET_SELL_TRIGGER:
+        log_set_sell_trigger(request[1], request[2], request[3])
+        return await set_sell_trigger(request[1], request[2], request[3])
 
-    elif request[b'command'] == b'SET_SELL_TRIGGER':
-        Logging.log_set_sell_trigger(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
-        return await set_sell_trigger(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
-
-    elif request[b'command'] == b'CANCEL_SET_SELL':
-        Logging.log_cancel_set_sell(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"))
-        return await cancel_set_sell(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"))
+    elif request[0] == Const.CANCEL_SET_SELL:
+        log_cancel_set_sell(request[1], request[2])
+        return await cancel_set_sell(request[1], request[2])
 
     else:
-        Logging.log_error(request, "Error: Unexpected request")
-        return "Unexpected request: " + request[b'command'].decode("utf-8")
+        if Const.TRANSACTION_BYTE_TO_STR.__contains__(request[0]):
+            request[0] = Const.TRANSACTION_BYTE_TO_STR[request[0]]
+        else:
+            request[0] = "Unknown"
+        log_error(request, "Error: Unexpected request")
+        return "Unexpected request: " + str(request[0])
+
+
+def log_add_funds(userid, amount):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "ADD",
+               "username": userid,
+               #"funds": "n/a" #do we need this?
+            }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_buy(userid, StockSymbol, amount):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "BUY",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_commit_buy(userid):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "COMMIT_BUY",
+               "username": userid,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_cancel_buy(userid):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "CANCEL_BUY",
+               "username": userid,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_sell(userid, StockSymbol, amount):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "SELL",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_commit_sell(userid):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "COMMIT_SELL",
+               "username": userid,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_cancel_sell(userid):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "CANCEL_SELL",
+               "username": userid,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_set_buy_amount(userid, StockSymbol, amount):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "SET_BUY_AMOUNT",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_cancel_set_buy(userid, StockSymbol):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "CANCEL_SET_BUY",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_set_buy_trigger(userid, StockSymbol, amount):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "SET_BUY_TRIGGER",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_set_sell_amount(userid, StockSymbol, amount):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "SET_SELL_AMOUNT",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_set_sell_trigger(userid, StockSymbol, amount):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default",
+               "command": "SET_SELL_TRIGGER",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_cancel_set_sell(userid, StockSymbol):
+    event = {  "LogType": "UserCommandType",
+               "timestamp": str(time.time()),
+               "server": "default", 
+               "command": "CANCEL_SET_SELL",
+               "username": userid,
+               "stockSymbol": StockSymbol,
+               #"funds": "n/a" #do we need this?
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_error(request, userid):
+    event = {  "LogType": "ErrorEventType",
+               "timestamp": str(time.time()),
+               "server": "default", 
+               "command": request[0],
+               "username": request[1],
+            }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_transaction(userid, funds):
+    event = {  "LogType": "AccountTransactionType",
+               "timestamp": str(time.time()),
+               "server": "default", 
+               "username": userid,
+               "funds": funds
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
+
+
+def log_quote(userid, StockSymbol):
+    event = {  "LogType": "QuoteServerType",
+               "timestamp": str(time.time()),
+               "server": "default", 
+               "stockSymbol": StockSymbol,
+               "username": userid,
+                 }
+
+    eventLog = db['EventLog']
+    event_id = eventLog.insert_one(event).inserted_id
+    newlog = db['EventLog'].find_one({"username":userid})
+    print(f"DB log result: {newlog!r}", flush=True)
 
 
 async def add_funds(userid, amount):
@@ -110,7 +370,7 @@ async def add_funds(userid, amount):
         return "Add success"
     else:
         print("Add funds no ack")
-        Logging.log_error(["ADD", userid], "Error: failed to add funds")
+        log_error(["ADD", userid], "Error: failed to add funds")
         return "Add fail"
 
 
@@ -131,12 +391,12 @@ async def quote(userid, stock_symbol):
             user = db.User.update_one({"UserID": userid}, {"$set": {"Quote": {"Timestamp": timestamp,"Stock": stock_symbol}}})
             return "ok"
         else:
-            Logging.log_error(["QUOTE", userid], "Error: Search could not be completed")
+            log_error(["QUOTE", userid], "Error: Search could not be completed")
             print("User ", userid, " search could not be completed for ", stock, flush=True)
             return "SEARCHERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["QUOTE", userid], "Error: Invalid user")
+        log_error(["QUOTE", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -164,12 +424,12 @@ async def buy(userid, stock_symbol, amount):
 
             return "ok"
         else:
-            Logging.log_error(["BUY", userid], "Error: Insufficient funds")
+            log_error(["BUY", userid], "Error: Insufficient funds")
             print("User ", userid, " non-sufficient funds (NSF)", flush=True)
             return "NSF"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["BUY", userid], "Error: Invalid user")
+        log_error(["BUY", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -199,11 +459,11 @@ async def commit_buy(userid):
                 return "Success"
             else:
                 print("User ", userid, " Failed to commit buy. Elapsed: ", elapsed)
-                Logging.log_error(["COMMIT_BUY", userid], "Error: Failed to commit buy; time elapsed: " + str(elapsed))
+                log_error(["COMMIT_BUY", userid], "Error: Failed to commit buy; time elapsed: " + str(elapsed))
                 return "Time window exceeded by " + str(elapsed - 60) + "s"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["COMMIT_BUY", userid], "Error: Invalid user")
+        log_error(["COMMIT_BUY", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -230,12 +490,12 @@ async def cancel_buy(userid):
                 user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": now}}})
                 return "ok"
             else:
-                Logging.log_error(["CANCEL_BUY", userid], "Error: Cancel could not be completed")
+                log_error(["CANCEL_BUY", userid], "Error: Cancel could not be completed")
                 print("User ", userid, " cancel could not be completed", flush=True)
                 return "CANCELERRORBUY"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["CANCEL_BUY", userid], "Error: Invalid user")
+        log_error(["CANCEL_BUY", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -259,12 +519,12 @@ async def sell(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"PendingSell": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            Logging.log_error(["SELL", userid], "Error: Insufficient Stock Amount")
+            log_error(["SELL", userid], "Error: Insufficient Stock Amount")
             print("User ", userid, " Insufficient stock amount (ISA)", flush=True)
             return "ISA"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SELL", userid], "Error: Invalid user")
+        log_error(["SELL", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -298,12 +558,12 @@ async def commit_sell(userid):
                 #todo: update stock portfolio
                 return "Success"
             else:
-                Logging.log_error(["COMMIT_SELL", userid], "Error: Failed to commit sell; time elapsed: " + str(elapsed))
+                log_error(["COMMIT_SELL", userid], "Error: Failed to commit sell; time elapsed: " + str(elapsed))
                 print("User ", userid, " Failed to commit sell. Elapsed: ", elapsed)
                 return "Time window exceeded by " + str(elapsed - 60) + "s"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["COMMIT_SELL", userid], "Error: Invalid user")
+        log_error(["COMMIT_SELL", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -330,12 +590,12 @@ async def cancel_sell(userid):
                 user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSell": {"Timestamp": now}}})
                 return "ok"
             else:
-                Logging.log_error(["CANCEL_SELL", userid], "Error: Cancel could not be completed")
+                log_error(["CANCEL_SELL", userid], "Error: Cancel could not be completed")
                 print("User ", userid, " cancel could not be completed", flush=True)
                 return "CANCELERRORSELL"        
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["CANCEL_SELL", userid], "Error: Invalid user")
+        log_error(["CANCEL_SELL", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -360,12 +620,12 @@ async def set_buy_amount(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"SetBuyAmount": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            Logging.log_error(["SET_BUY_AMOUNT", userid], "Error: could not set a buy amount")
+            log_error(["SET_BUY_AMOUNT", userid], "Error: could not set a buy amount")
             print("User ", userid, " can not set automated buy for ", stock_symbol, flush=True)
             return "SETBUYERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SET_BUY_AMOUNT", userid], "Error: Invalid user")
+        log_error(["SET_BUY_AMOUNT", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -389,12 +649,12 @@ async def cancel_set_buy(userid, stock_symbol):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSetBuy": {"Timestamp": timestamp,"Stock": stock_symbol}}})
             return "ok"
         else:
-            Logging.log_error(["CANCEL_SET_BUY", userid], "Error: Cancel could not be completed")
+            log_error(["CANCEL_SET_BUY", userid], "Error: Cancel could not be completed")
             print("User ", userid, " cancel could not be completed", flush=True)
             return "CANCELERRORSETBUY"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["CANCEL_SET_BUY", userid], "Error: Invalid user")
+        log_error(["CANCEL_SET_BUY", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -419,12 +679,12 @@ async def set_buy_trigger(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"SetBuyTrigger": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            Logging.log_error(["SET_BUY_TRIGGER", userid], "Error: could not set a buy trigger")
+            log_error(["SET_BUY_TRIGGER", userid], "Error: could not set a buy trigger")
             print("User ", userid, " can not set automated buy for ", stock_symbol, flush=True)
             return "SETBUYTRIGGERERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SET_BUY_TRIGGER", userid], "Error: Invalid user")
+        log_error(["SET_BUY_TRIGGER", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -449,12 +709,12 @@ async def set_sell_amount(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"SetSellAmount": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            Logging.log_error(["SET_SELL_AMOUNT", userid], "Error: could not set a sell amount")
+            log_error(["SET_SELL_AMOUNT", userid], "Error: could not set a sell amount")
             print("User ", userid, " can not set automated sell for ", stock_symbol, flush=True)
             return "SETSELLERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SET_BUY_AMOUNT", userid], "Error: Invalid user")
+        log_error(["SET_BUY_AMOUNT", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -479,12 +739,12 @@ async def set_sell_trigger(userid, stock_symbol, amount):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"SetSellTrigger": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
             return "ok"
         else:
-            Logging.log_error(["SET_SELL_TRIGGER", userid], "Error: could not set a sell trigger")
+            log_error(["SET_SELL_TRIGGER", userid], "Error: could not set a sell trigger")
             print("User ", userid, " can not set automated sell for ", stock_symbol, flush=True)
             return "SETSELLTRIGGERERROR"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SET_SELL_TRIGGER", userid], "Error: Invalid user")
+        log_error(["SET_SELL_TRIGGER", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -508,12 +768,12 @@ async def cancel_set_sell(userid, stock_symbol):
             user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSetSell": {"Timestamp": timestamp,"Stock": stock_symbol}}})
             return "ok"
         else:
-            Logging.log_error(["CANCEL_SET_SELL", userid], "Error: Cancel could not be completed")
+            log_error(["CANCEL_SET_SELL", userid], "Error: Cancel could not be completed")
             print("User ", userid, " cancel could not be completed", flush=True)
             return "CANCELERRORSETSELL"
     else:
         print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["CANCEL_SET_SELL", userid], "Error: Invalid user")
+        log_error(["CANCEL_SET_SELL", userid], "Error: Invalid user")
         return "invalid user"
 
     return "unhandled error"
@@ -521,31 +781,33 @@ async def cancel_set_sell(userid, stock_symbol):
 
 async def main():
 
-    try:
-        RedisStreams.client.xgroup_create('command_in', 'tx', mkstream=True)
-    except:
-        print('exception in xgroup_create command_in')
+    if os.environ.__contains__("NAME"):
+        print("Name: ", os.environ["NAME"])
 
-    while True:
-        for _stream, messages in RedisStreams.client.xreadgroup('tx', RedisStreams.container_id, {'command_in': '>'}, 1, block=100):
-            print('listen to stream: ', _stream)
-            for message in messages:
-                print(message, flush=True)
+    if os.environ.__contains__("TRANSACTION_IP"):
+        print(os.environ["TRANSACTION_IP"])
+        my_ip = os.environ["TRANSACTION_IP"]
+    else:
+        my_ip = "127.0.0.1"
 
-                response = await handle_request(message[1])
+    if os.environ.__contains__("TRANSACTION_PORT"):
+        print(os.environ["TRANSACTION_PORT"])
+        my_port = os.environ["TRANSACTION_PORT"]
+    else:
+        my_port = 8889
 
-                RedisStreams.client.xadd('command_out', {'response': response})
-                RedisStreams.client.xack('command_in', 'tx', message[0])
+   # global fetch_reader, fetch_writer
+   # fetch_reader, fetch_writer = asyncio.open_connection(
+   #         os.environ["FETCH_IP"], os.environ["FETCH_PORT"])
 
+    server = await asyncio.start_server(
+        handle_user_request, '', my_port)
 
-#redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('command_in', 'tx', handle_stream_in,))
-#redis_listener.start()
+    addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+    print(f'Serving on {addrs}', flush=True)
 
-#RedisStreams.write_to_stream('command_out', {'command': RedisStreams.container_id})
+    async with server:
+        await server.serve_forever()
 
-RedisStreams.client = RedisStreams.connect()
-db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
-db = db_client.DayTrading
-Logging.set_db(db)
 
 asyncio.run(main())
