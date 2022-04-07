@@ -2,6 +2,20 @@ import asyncio
 import os
 import time
 from subprocess import Popen, PIPE, run
+import Common.src.RedisStreams as RedisStreams
+import threading
+
+
+def handle_stream_in(message):
+    print(message)
+    RedisStreams.client.xack('quote', 'fetch', message.id)
+
+
+redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('quote', 'fetch', handle_stream_in,))
+redis_listener.start()
+
+RedisStreams.write_to_stream('out', 'hello from fetch server ' + RedisStreams.container_name)
+
 
 #This code is incomplete
 
@@ -22,7 +36,6 @@ def log_request(response):
     f.write(response[2] + "\n")
     f.write(response[3] + "\n")
     f.write(response[4] + "\n")
-	
 
 
 async def query_server(stock_symbol, username):

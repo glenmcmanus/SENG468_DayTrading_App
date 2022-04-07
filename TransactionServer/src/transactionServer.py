@@ -1,18 +1,26 @@
 import asyncio
-import datetime
 import os
 import Common.src.Constants as Const
 import Common.src.Logging as Logging
+import Common.src.RedisStreams as RedisStreams
 import pymongo
 import time
-#import dns.resolver
+import threading
 
-#answers = dns.resolver.resolve(os.environ["PROXY_HOSTNAME"])
-#for rdata in answers:
-#    print('Host', rdata.exchange, 'has preference', rdata.preference)
+
+def handle_stream_in(message):
+    print(message)
+    RedisStreams.client.xack('in', 'tx', message.id)
+
+
+redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('in', 'tx', handle_stream_in,))
+redis_listener.start()
+
+RedisStreams.write_to_stream('out', 'hello from transaction server ' + RedisStreams.container_name)
 
 db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
 db = db_client.DayTrading
+
 
 async def handle_user_request(reader, writer):
     while True:
