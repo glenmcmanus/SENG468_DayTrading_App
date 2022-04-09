@@ -84,15 +84,16 @@ app.use(function(err, req, res, next) {
 
 //service connections
 
-redisSetup();
-async function redisSetup()
+service_setup();
+async function service_setup()
 {
     await redis.connect();
     redis_listener.startListener();
+
+    mgdb.connectDB();
 }
 
-mgdb.connectDB();
-transaction_client.connect();
-fetch_client.connect();
+//transaction_client.connect();
+//fetch_client.connect();
 
 module.exports = app;
