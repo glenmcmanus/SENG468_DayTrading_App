@@ -6,6 +6,8 @@ import Common.src.RedisStreams as RedisStreams
 import pymongo
 import time
 import threading
+import cache
+#import dns.resolver
 
 
 def handle_stream_in(message):
@@ -20,6 +22,7 @@ RedisStreams.write_to_stream('command_out', {'command':  RedisStreams.container_
 
 db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
 db = db_client.DayTrading
+cache = cache.Cache()
 
 
 async def handle_user_request(reader, writer):
@@ -409,6 +412,11 @@ async def buy(userid, stock_symbol, amount):
 
     amount = float(amount)
 
+    # Add transaction as pending confirmation from user & delete any previous pending transactions
+    if cache.get_pending_transaction(userid, 'BUY'):
+        cache.delete_pending_transaction(userid, 'BUY')
+    cache.add_pending_transaction(userid, 'BUY', stock_symbol, amount, time.time())
+
     if user is not None:
         if user["AccountBalance"] >= amount:
             print("User ", userid, " buy $", amount, " of ", stock_symbol, flush=True)
@@ -437,6 +445,11 @@ async def buy(userid, stock_symbol, amount):
 async def commit_buy(userid):
     user = db.User.find_one({"UserID": userid})
     print(f"DB user result: {user!r}", flush=True)
+
+    # Ensure latest buy command exists 
+    pending_transaction = cache.get_pending_transaction(userid, 'BUY')
+    if not pending_transaction:
+        return 'No pending BUY transaction found'
 
     if user is not None:
         if not user.__contains__("PendingBuy") or user['PendingBuy'] is None:
@@ -477,6 +490,11 @@ async def cancel_buy(userid):
 
     print(f"DB user result: {user!r}", flush=True)
 
+    # Ensure latest buy command exists 
+    pending_transaction = cache.get_pending_transaction(userid, 'BUY')
+    if not pending_transaction:
+        return 'No pending BUY transaction found'
+
     if user is not None:
         if not user.__contains__("PendingBuy") or user['PendingBuy'] is None:
             return "No pending buy"
@@ -511,6 +529,10 @@ async def sell(userid, stock_symbol, amount):
 
     amount = float(amount)
 
+    if cache.get_pending_transaction(userid, 'SELL'):
+        cache.delete_pending_transaction(userid, 'SELL')
+    cache.add_pending_transaction(userid, 'SELL', stock_symbol, amount, time.time())
+
     if user is not None:
         #Not exactly sure how to get User's amount of a certain stock
         if user["AccountBalance"] >= amount:
@@ -537,6 +559,12 @@ async def commit_sell(userid):
     user = db['User'].find_one({"UserID":userid})
 
     print(f"DB user result: {user!r}", flush=True)
+
+    # Ensure latest sell command exists 
+    pending_transaction = cache.get_pending_transaction(userid, 'SELL')
+    if not pending_transaction:
+        return 'No pending SELL transaction found'
+
 
     if user is not None:
         if not user.__contains__("PendingSell") or user['PendingSell'] is None:
@@ -576,6 +604,12 @@ async def cancel_sell(userid):
     user = db['User'].find_one({"UserID":userid})
 
     print(f"DB user result: {user!r}", flush=True)
+
+    # Ensure latest sell command exists
+    pending_transaction = cache.get_pending_transaction(userid, 'SELL')
+    if not pending_transaction:
+        return 'No pending SELL transaction found'
+
 
     if user is not None:
         if not user.__contains__("PendingSell") or user['PendingSell'] is None:
