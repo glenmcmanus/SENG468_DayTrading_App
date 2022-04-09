@@ -9,14 +9,14 @@ import threading
 
 
 def handle_stream_in(message):
-    print(message)
-    RedisStreams.client.xack('in', 'tx', message.id)
+    print(message, flush=True)
+    #RedisStreams.client.xack('in', 'tx', message.id)
 
 
-redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('in', 'tx', handle_stream_in,))
+redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('command_in', 'tx', handle_stream_in,))
 redis_listener.start()
 
-RedisStreams.write_to_stream('out', 'hello from transaction server ' + RedisStreams.container_name)
+RedisStreams.write_to_stream('command_out', {'command':  RedisStreams.container_id})
 
 db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
 db = db_client.DayTrading
@@ -28,7 +28,7 @@ async def handle_user_request(reader, writer):
         message = data.decode()
         addr = writer.get_extra_info('peername')
 
-        print(f"Received {message!r} from {addr!r}", flush=True)
+        #print(f"Received {message!r} from {addr!r}", flush=True)
 
         message = message.split(',')
         

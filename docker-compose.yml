@@ -4,19 +4,15 @@ services:
 
   #load balancer
   load_balancer:
-    image: load_balancer:latest
+    image: load_balancer
     build:
       context: ./nginx/
       dockerfile: Nginx.Dockerfile
     container_name: load_balancer
-    #depends_on:
-      #- fetch_server
-      #- transaction_server
+    depends_on:
+      - web_server
     ports:
       - 5100:5100
-      - 5200
-      - 5300
-      - 5400
     networks:
       - backend
     deploy:
@@ -25,10 +21,10 @@ services:
 
   #fetch
   fetch_server:
-    image: fetch_server:latest
+    image: fetch_server
     build:
-      context: ./LegacyServer
-      dockerfile: ./Dockerfile
+      context: ./
+      dockerfile: ./LegacyServer/Dockerfile
     depends_on:
       - "router1"
     #deploy:
@@ -43,7 +39,7 @@ services:
 
   #transaction
   transaction_server:
-    image: transaction_server:latest
+    image: transaction_server
     build:
       context: ./
       dockerfile: ./TransactionServer/Dockerfile
@@ -63,24 +59,20 @@ services:
 
   #webserver
   web_server:
-    image: webserver:latest
+    image: webserver
     build:
       context: ./webserver
       dockerfile: ./Dockerfile
     depends_on:
       - "router1"
-      - "fetch_server"
-      - "transaction_server"
     deploy:
       replicas: 3
     env_file:
       - .env
       - ./webserver/webserver.env
     links:
-      - load_balancer
       - router1
-      - transaction_server
-      - fetch_server
+      - redis
     ports:
       - ${WEB_PORT}
     networks:
@@ -102,7 +94,7 @@ services:
 
   #mongo routers
   router1:
-    image: mongo_router:latest
+    image: mongo_router
     build:
       context: ./Mongo/Router
       dockerfile: ./Dockerfile
@@ -119,7 +111,7 @@ services:
     restart: always
 
   router2:
-    image: mongo_router:latest
+    image: mongo_router
     container_name: router2
     command: mongos --port 27017 --configdb config-srv/cfg_srv1:27017,cfg_srv2:27017,cfg_srv3:27017 --bind_ip_all
     depends_on:
@@ -136,7 +128,7 @@ services:
 
   #mongo Config Servers
   cfg_srv1:
-    image: mongo_cfg:latest
+    image: mongo_cfg
     build:
       context: ./Mongo/Config
       dockerfile: ./Dockerfile
@@ -154,7 +146,7 @@ services:
     restart: always
 
   cfg_srv2:
-    image: mongo_cfg:latest
+    image: mongo_cfg
     container_name: cfg_srv2
     command: mongod --port 27017 --configsvr --replSet config-srv
     environment:
@@ -166,7 +158,7 @@ services:
     restart: always
 
   cfg_srv3:
-    image: mongo_cfg:latest
+    image: mongo_cfg
     build:
       context: ./Mongo/Config
       dockerfile: ./Dockerfile
@@ -184,7 +176,7 @@ services:
 
   #Shard1
   shard1a:
-    image: mongo_shard:latest
+    image: mongo_shard
     build:
       context: ./Mongo/Shard
       dockerfile: ./Dockerfile
@@ -204,7 +196,7 @@ services:
     restart: always
 
   shard1b:
-    image: mongo_shard:latest
+    image: mongo_shard
     container_name: shard1b
     command: mongod --port 27017 --shardsvr --replSet shard1
     depends_on:
@@ -219,7 +211,7 @@ services:
     restart: always
 
   shard1c:
-    image: mongo_shard:latest
+    image: mongo_shard
     container_name: shard1c
     command: mongod --port 27017 --shardsvr --replSet shard1
     depends_on:
@@ -235,7 +227,7 @@ services:
 
   #Shard2
   shard2a:
-    image: mongo_shard:latest
+    image: mongo_shard
     container_name: shard2a
     command: mongod --port 27017 --shardsvr --replSet shard2
     depends_on:
@@ -252,7 +244,7 @@ services:
     restart: always
 
   shard2b:
-    image: mongo_shard:latest
+    image: mongo_shard
     container_name: shard2b
     command: mongod --port 27017 --shardsvr --replSet shard2
     depends_on:
@@ -267,7 +259,7 @@ services:
     restart: always
 
   shard2c:
-    image: mongo_shard:latest
+    image: mongo_shard
     container_name: shard2c
     command: mongod --port 27017 --shardsvr --replSet shard2
     depends_on:
@@ -283,7 +275,7 @@ services:
 
   #Shard3
   shard3a:
-    image: mongo_shard:latest
+    image: mongo_shard
     container_name: shard3a
     command: mongod --port 27017 --shardsvr --replSet shard3
     depends_on:
@@ -300,7 +292,7 @@ services:
     restart: always
 
   shard3b:
-    image: mongo_shard:latest
+    image: mongo_shard
     container_name: shard3b
     command: mongod --port 27017 --shardsvr --replSet shard3
     depends_on:
@@ -315,7 +307,7 @@ services:
     restart: always
 
   shard3c:
-    image: mongo_shard:latest
+    image: mongo_shard
     container_name: shard3c
     command: mongod --port 27017 --shardsvr --replSet shard3
     depends_on:

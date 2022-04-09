@@ -7,14 +7,14 @@ import threading
 
 
 def handle_stream_in(message):
-    print(message)
-    RedisStreams.client.xack('quote', 'fetch', message.id)
+    print(message, flush=True)
+    #RedisStreams.client.xack('quote', 'fetch', message.id)
 
 
-redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('quote', 'fetch', handle_stream_in,))
+redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('quote_in', 'fetch', handle_stream_in,))
 redis_listener.start()
 
-RedisStreams.write_to_stream('out', 'hello from fetch server ' + RedisStreams.container_name)
+RedisStreams.write_to_stream('quote_out', {'quote': RedisStreams.container_id})
 
 
 #This code is incomplete

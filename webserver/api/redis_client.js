@@ -4,7 +4,9 @@ const client = redis.createClient({ url: process.env.REDIS_URL });
 const getId = require('docker-container-id');
 var consumerName = null;
 const group = 'web_api';
-const streams = ['out'];
+const streams = ['command_out', 'quote_out'];
+
+var response_buffer = {}
 
 async function connect() {
 
@@ -12,19 +14,21 @@ async function connect() {
 
     await client.connect();
 
-    streams.forEach(stream => {
-            createConsumerGroup(stream, group);
-    });
-
     consumerName = await getId();
     console.log("Container name:" + consumerName);
 
-    await writeStream(streams[0], 'hello world');
+    for(let i = 0; i < streams.length; i++)
+        await createConsumerGroup(streams[i], group);
 
+    //await createConsumerGroup(streams[0], group);
+    //await createConsumerGroup(stream[1], group);
+
+    await writeStream('command_in', JSON.stringify({'msg': 'hello from web api' + consumerName}));
+    await writeStream('quote_in', JSON.stringify({'msg': 'hello from web api' + consumerName}));
 }
 
 async function setHash(collection, key, json_value) {
-    client.hset(collection, key, json_value, function (err, response) {
+    client.hSet(collection, key, json_value, function (err, response) {
         if (err) {
             logger.log({"level": "error", "message": JSON.stringify(err)});
         }
@@ -32,25 +36,39 @@ async function setHash(collection, key, json_value) {
 }
 
 async function getHash(collection, key) {
-    return await client.hget(collection, key);
+    return await client.hGet(collection, key);
 }
 
 async function hashExists(collection, key) {
-    return await client.hexists(collection, key);
+    console.log(client);
+
+    return await client.hExists(collection, key, (err, res) => {
+        if(err)
+        {
+            console.log(err);
+            return false;
+        }
+        else if(!res)
+            return false;
+        else
+            return true;
+    });
 }
 
 function delHash(collection, key) {
-    return client.hdel(collection, key, function(err) {
+    return client.hDel(collection, key, function(err) {
         if(err) {
             console.log(err)
         }
    });
 }
 
-async function writeStream(stream, payload) {
-    await client.xAdd(stream, '*', {
-      payload
-    });
+async function writeStream(stream, payload) {//, res) {
+    //response_buffer[payload['userID']] = res;
+
+    console.log('write payload ' + payload + ' to stream ' + stream);
+
+    await client.xAdd(stream, '*', payload);
 }
 
 async function createConsumerGroup(stream, group) {
@@ -58,7 +76,7 @@ async function createConsumerGroup(stream, group) {
         await client.xGroupCreate(stream, group, '0', {
             MKSTREAM: true
         });
-        console.log('Created consumer group.');
+        console.log('Created consumer group ' + group + ' for stream ' + stream);
     } catch (e) {
         console.log('Consumer group already exists, skipped creation.');
     }

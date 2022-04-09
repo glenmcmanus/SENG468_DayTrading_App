@@ -11,12 +11,18 @@ WORKDIR /usr/legacy_quote
 
 # install dependencies
 #RUN pip install -r requirements.txt
+RUN pip install redis
 RUN apt-get update && apt-get -y dist-upgrade
 RUN apt install -y netcat
 
 # copy the content of the local src directory to the working directory
 
-COPY ./src/ .
+RUN mkdir -p .
+RUN mkdir -p ./Common
+RUN mkdir -p ./LegacyServer
+
+COPY ./Common ./Common
+COPY ./LegacyServer ./LegacyServer
 
 # command to run on container start
-CMD [ "python", "queryLegacyServer.py" ]
+CMD [ "python", "-m", "LegacyServer.src.queryLegacyServer.py" ]

@@ -3,6 +3,7 @@ const CONST = require("../public/javascripts/constants");
 var express = require('express');
 var router = express.Router();
 var fetch_client = require('../fetch_client.js')
+const redis_client = require('../redis_client.js');
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -19,6 +20,8 @@ router.put('/', (req, res) => {
 
     const query = req.body["userID"] + ',' + req.body["stock"];
     fetch_client.enqueue(req.body['userID'], query, res);
+
+    redis_client.writeStream('quote', req.body, res);
 });
 
 module.exports = router;
