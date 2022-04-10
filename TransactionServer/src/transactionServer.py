@@ -46,51 +46,51 @@ async def handle_request(request):
 #request[2] = funds/stocksymbol
 #request[3] = amount
     if request[0] == Const.ADD:
-        log_add_funds(request[1], request[2])
+        log_user_command(Const.ADD, request[1], ,request[2])
         return await add_funds(request[1], request[2])
 
     elif request[0] == Const.BUY:
-        log_buy(request[1], request[2], request[3])
+        log_user_command(Const.BUY, request[1], request[2], request[3])
         return await buy(request[1], request[2], request[3])
 
     elif request[0] == Const.COMMIT_BUY:
-        log_commit_buy(request[1])
+        log_user_command(Const.COMMIT_BUY, request[1])
         return await commit_buy(request[1])
 
     elif request[0] == Const.CANCEL_BUY:
-        log_cancel_buy(request[1])
+        log_user_command(Const.CANCEL_BUY, request[1])
         return await cancel_buy(request[1])
 
     elif request[0] == Const.SELL:
-        log_sell(request[1], request[2], request[3])
+        log_user_command(Const.SELL, request[1], request[2], request[3])
         return await sell(request[1], request[2], request[3])
 
     elif request[0] == Const.CANCEL_SELL:
-        log_cancel_sell(request[1])
+        log_user_command(Const.CANCEL_SELL, request[1])
         return await cancel_sell(request[1])
 
     elif request[0] == Const.SET_BUY_AMOUNT:
-        log_set_buy_amount(request[1], request[2], request[3])
+        log_user_command(Const.SET_BUY_AMOUNT, request[1], request[2], request[3])
         return await set_buy_amount(request[1], request[2], request[3])
 
     elif request[0] == Const.CANCEL_SET_BUY:
-        log_cancel_set_buy(request[1], request[2])
+        log_user_command(Const.CANCEL_SET_BUY, request[1], request[2])
         return await cancel_set_buy(request[1], request[2])
 
     elif request[0] == Const.SET_BUY_TRIGGER:
-        log_set_buy_trigger(request[1], request[2], request[3])
+        log_user_command(Const.SET_BUY_TRIGGER, request[1], request[2], request[3])
         return await set_buy_trigger(request[1], request[2], request[3])
 
     elif request[0] == Const.SET_SELL_AMOUNT:
-        log_set_sell_amount(request[1], request[2], request[3])
+        log_user_command(Const.SET_SELL_AMOUNT, request[1], request[2], request[3])
         return await set_sell_amount(request[1], request[2], request[3])
 
     elif request[0] == Const.SET_SELL_TRIGGER:
-        log_set_sell_trigger(request[1], request[2], request[3])
+        log_user_command(Const.SET_SELL_TRIGGER, request[1], request[2], request[3])
         return await set_sell_trigger(request[1], request[2], request[3])
 
     elif request[0] == Const.CANCEL_SET_SELL:
-        log_cancel_set_sell(request[1], request[2])
+        log_user_command(Const.CANCEL_SET_SELL, request[1], request[2])
         return await cancel_set_sell(request[1], request[2])
 
     else:
@@ -101,209 +101,113 @@ async def handle_request(request):
         log_error(request, "Error: Unexpected request")
         return "Unexpected request: " + str(request[0])
 
-
-def log_add_funds(userid, amount):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "ADD",
-               "username": userid,
-               #"funds": "n/a" #do we need this?
-            }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_buy(userid, StockSymbol, amount):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "BUY",
-               "username": userid,
-               "stockSymbol": StockSymbol,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_commit_buy(userid):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "COMMIT_BUY",
-               "username": userid,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_cancel_buy(userid):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "CANCEL_BUY",
-               "username": userid,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_sell(userid, StockSymbol, amount):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "SELL",
-               "username": userid,
-               "stockSymbol": StockSymbol,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_commit_sell(userid):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "COMMIT_SELL",
-               "username": userid,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_cancel_sell(userid):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "CANCEL_SELL",
-               "username": userid,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_set_buy_amount(userid, StockSymbol, amount):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "SET_BUY_AMOUNT",
-               "username": userid,
-               "stockSymbol": StockSymbol,
-               #"funds": "n/a" #do we need this?
-                 }
+def log_user_command(user_command, userid, StockSymbol: None, amount: None, ):
+    if user_command == Const.ADD:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "ADD",
+            "username": userid,
+             }
+    elif user_command == Const.BUY:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "BUY",
+            "username": userid,
+            "stockSymbol": StockSymbol,
+             }
+    elif user_command == Const.COMMIT_BUY:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "COMMIT_BUY",
+            "username": userid,
+             }
+    elif user_command == Const.CANCEL_BUY:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "CANCEL_BUY",
+            "username": userid,
+             }
+    elif user_command == Const.SELL:
+        event = {  "LogType": "UserCommandType",
+           "timestamp": str(time.time()),
+           "server": "default",
+           "command": "SELL",
+           "username": userid,
+           "stockSymbol": StockSymbol,
+             }
+    elif user_command == Const.COMMIT_SELL:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "COMMIT_SELL",
+            "username": userid,
+             }
+    elif user_command == Const.CANCEL_SELL:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "CANCEL_SELL",
+            "username": userid,
+             }
+    elif user_command == Const.SET_BUY_AMOUNT:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "SET_BUY_AMOUNT",
+            "username": userid,
+            "stockSymbol": StockSymbol,
+             }
+    elif user_command == Const.CANCEL_SET_BUY:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "CANCEL_SET_BUY",
+            "username": userid,
+            "stockSymbol": StockSymbol,
+             }
+    elif user_command == Const.SET_BUY_TRIGGER:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "SET_BUY_TRIGGER",
+            "username": userid,
+            "stockSymbol": StockSymbol,
+             }
+    elif user_command == Const.SET_SELL_AMOUNT:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "SET_SELL_AMOUNT",
+            "username": userid,
+            "stockSymbol": StockSymbol,
+             }
+    elif user_command == Const.SET_SELL_TRIGGER:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default",
+            "command": "SET_SELL_TRIGGER",
+            "username": userid,
+            "stockSymbol": StockSymbol,
+             }
+    elif user_command == Const.CANCEL_SET_SELL:
+        event = {  "LogType": "UserCommandType",
+            "timestamp": str(time.time()),
+            "server": "default", 
+            "command": "CANCEL_SET_SELL",
+            "username": userid,
+            "stockSymbol": StockSymbol,
+             }
+    else:
+        print("this should never happen")
 
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
     print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_cancel_set_buy(userid, StockSymbol):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "CANCEL_SET_BUY",
-               "username": userid,
-               "stockSymbol": StockSymbol,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_set_buy_trigger(userid, StockSymbol, amount):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "SET_BUY_TRIGGER",
-               "username": userid,
-               "stockSymbol": StockSymbol,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_set_sell_amount(userid, StockSymbol, amount):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "SET_SELL_AMOUNT",
-               "username": userid,
-               "stockSymbol": StockSymbol,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_set_sell_trigger(userid, StockSymbol, amount):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": "SET_SELL_TRIGGER",
-               "username": userid,
-               "stockSymbol": StockSymbol,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
-
-def log_cancel_set_sell(userid, StockSymbol):
-    event = {  "LogType": "UserCommandType",
-               "timestamp": str(time.time()),
-               "server": "default", 
-               "command": "CANCEL_SET_SELL",
-               "username": userid,
-               "stockSymbol": StockSymbol,
-               #"funds": "n/a" #do we need this?
-                 }
-
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
-
 
 def log_error(request, userid):
     event = {  "LogType": "ErrorEventType",
