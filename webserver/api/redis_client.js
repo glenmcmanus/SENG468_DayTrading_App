@@ -2,7 +2,7 @@ require('dotenv').config()
 const redis = require('redis');
 const client = redis.createClient({ url: process.env.REDIS_URL });
 const getId = require('docker-container-id');
-var consumerName = null;
+var consumer_name = null;
 const group = 'web_api';
 const streams = ['command_out', 'quote_out'];
 
@@ -14,8 +14,8 @@ async function connect() {
 
     await client.connect();
 
-    consumerName = await getId();
-    console.log("Container name:" + consumerName);
+    consumer_name = await getId();
+    console.log("Container name:" + consumer_name);
 
     for(let i = 0; i < streams.length; i++)
         await createConsumerGroup(streams[i], group);
@@ -23,8 +23,10 @@ async function connect() {
     //await createConsumerGroup(streams[0], group);
     //await createConsumerGroup(stream[1], group);
 
-    await writeStream('command_in', JSON.stringify({'msg': 'hello from web api' + consumerName}));
-    await writeStream('quote_in', JSON.stringify({'msg': 'hello from web api' + consumerName}));
+    //let payload = {'msg': `hello from web api ${consumer_name}`};
+    //payload = JSON.stringify(payload);
+    //await writeStream('command_in', payload);
+    //await writeStream('quote_in', payload);
 }
 
 async function setHash(collection, key, json_value) {
@@ -63,12 +65,11 @@ function delHash(collection, key) {
    });
 }
 
-async function writeStream(stream, payload) {//, res) {
-    //response_buffer[payload['userID']] = res;
+async function writeStream(stream, payload, res) {
+    const id = await client.xAdd(stream, '*', payload);
+    response_buffer[id] = res;
 
-    console.log('write payload ' + payload + ' to stream ' + stream);
-
-    await client.xAdd(stream, '*', payload);
+    console.log("wrote stream with id: " + id);
 }
 
 async function createConsumerGroup(stream, group) {
@@ -93,4 +94,5 @@ exports.setHash = setHash;
 exports.hashExists = hashExists;
 exports.streams = streams;
 exports.writeStream = writeStream;
-exports.consumerName = consumerName;
+exports.response_buffer = response_buffer;
+exports.consumer_name = consumer_name;

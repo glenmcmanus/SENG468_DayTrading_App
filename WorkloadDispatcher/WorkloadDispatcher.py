@@ -219,7 +219,7 @@ def main():
         #print(req_str)
         #print(data)
         res = requests.put(req_str, json=data)
-        #print(res, res.content)
+        print(res, res.content)
         res.close()
 
 if __name__ == "__main__":

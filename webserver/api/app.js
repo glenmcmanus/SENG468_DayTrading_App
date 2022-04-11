@@ -88,7 +88,7 @@ service_setup();
 async function service_setup()
 {
     await redis.connect();
-    redis_listener.startListener();
+  //  redis_listener.startListener();
 
     mgdb.connectDB();
 }

@@ -7,21 +7,6 @@ import pymongo
 import time
 import threading
 
-
-def handle_stream_in(message):
-    print(message, flush=True)
-    #RedisStreams.client.xack('in', 'tx', message.id)
-
-
-redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('command_in', 'tx', handle_stream_in,))
-redis_listener.start()
-
-RedisStreams.write_to_stream('command_out', {'command':  RedisStreams.container_id})
-
-db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
-db = db_client.DayTrading
-
-
 async def handle_user_request(reader, writer):
     while True:
         data = await reader.read(100)
@@ -535,35 +520,38 @@ async def cancel_set_sell(userid, stock_symbol):
     return "unhandled error"
 
 
-async def main():
+def main():
 
-    if os.environ.__contains__("NAME"):
-        print("Name: ", os.environ["NAME"])
+    try:
+        RedisStreams.client.xgroup_create('command_in', 'tx', mkstream=True)
+    except:
+        print('exception in xgroup_create command_in')
 
-    if os.environ.__contains__("TRANSACTION_IP"):
-        print(os.environ["TRANSACTION_IP"])
-        my_ip = os.environ["TRANSACTION_IP"]
-    else:
-        my_ip = "127.0.0.1"
+    try:
+        RedisStreams.client.xgroup_create('command_out', 'tx', mkstream=True)
+    except:
+        print('exception in xgroup_create command_out')
 
-    if os.environ.__contains__("TRANSACTION_PORT"):
-        print(os.environ["TRANSACTION_PORT"])
-        my_port = os.environ["TRANSACTION_PORT"]
-    else:
-        my_port = 8889
+    while True:
+        for _stream, messages in RedisStreams.client.xreadgroup('tx', RedisStreams.container_id, {'command_in': '>'}, 1, block=100):
+            print('listen to stream: ', _stream)
+            for message in messages:
+                print(message, flush=True)
 
-   # global fetch_reader, fetch_writer
-   # fetch_reader, fetch_writer = asyncio.open_connection(
-   #         os.environ["FETCH_IP"], os.environ["FETCH_PORT"])
+                response = handle_request(message[1])
 
-    server = await asyncio.start_server(
-        handle_user_request, '', my_port)
-
-    addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
-    print(f'Serving on {addrs}', flush=True)
-
-    async with server:
-        await server.serve_forever()
+                RedisStreams.client.xadd('command_out', {'response': response})
+                RedisStreams.client.xack('command_in', 'tx', message[0])
 
 
-asyncio.run(main())
+#redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('command_in', 'tx', handle_stream_in,))
+#redis_listener.start()
+
+#RedisStreams.write_to_stream('command_out', {'command': RedisStreams.container_id})
+
+RedisStreams.client = RedisStreams.connect()
+db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
+db = db_client.DayTrading
+
+main()
+

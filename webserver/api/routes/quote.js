@@ -15,13 +15,13 @@ router.post('/', (req, res) => {
     res.send('Got a POST request');
 });
   
-router.put('/', (req, res) => {
+router.put('/', async (req, res) => {
     console.log(req.body);
 
-    const query = req.body["userID"] + ',' + req.body["stock"];
-    fetch_client.enqueue(req.body['userID'], query, res);
+    const id = await redis_client.writeStream('quote_in', req.body, res);
+    const response = await redis_listener.listenForId('quote_out', id);
 
-    redis_client.writeStream('quote', req.body, res);
+    res.send(response);
 });
 
 module.exports = router;

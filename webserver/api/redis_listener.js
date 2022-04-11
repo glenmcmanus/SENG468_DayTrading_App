@@ -16,8 +16,7 @@ if (isMainThread) {
         const worker = new Worker(__filename);
 
         worker.on('message', (resolve) => {
-            console.log("Main thread resolved response:");
-            console.log(resolve);
+            //redisClient.response_buffer[resolve[0].messages[0].id].send('it works!');
         });
 
         worker.on('error', (reject) => {
@@ -31,7 +30,53 @@ if (isMainThread) {
         });
     }
 
+    async function listenForId(stream, id) {
+        for(;;)
+        {
+            try {
+                let response = await redisClient.client.xReadGroup(
+                    redisClient.client.commandOptions({
+                        isolated: true
+                    }),
+                    'web_api',
+                    redisClient.consumer_name, [
+                        // XREADGROUP can read from multiple streams, starting at a
+                        // different ID for each...
+                    {
+                        key: stream,
+                        id: '>'
+                    }
+                    ], {
+                        // Read 1 entry at a time, block for 5 seconds if there are none.
+                        COUNT: 1,
+                        BLOCK: 5000
+                        }
+                    );
+
+                if (response) {
+                    no_response = false;
+
+                    console.log(response);
+
+                    if(response[0].messages[0].id == id);
+                    {
+                        redisClient.client.xAck(stream, redisClient.group, id);
+                        return response;
+                    }
+
+                } else {
+                    // Response is null, we have read everything that is
+                    // in the stream right now...
+                    //console.log('No new stream entries.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    }
+
 exports.startListener = startListener;
+exports.listenForId = listenForId;
 
 } else {
     console.log("In worker, about to start listening");
@@ -54,7 +99,7 @@ exports.startListener = startListener;
                         isolated: true
                     }),
                     'web_api',
-                    redisClient.consumerName, [
+                    redisClient.consumer_name, [
                         // XREADGROUP can read from multiple streams, starting at a
                         // different ID for each...
                     {
@@ -70,14 +115,18 @@ exports.startListener = startListener;
 
                 if (response) {
                     no_response = false;
-                    let json_response = JSON.stringify(response);
-                    //console.log("Thread response:")
-                    //console.log(json_response);
-                    parentPort.postMessage(json_response);
 
-                    //todo wait until response is handled before acking
+                    console.log(response);
+
                     const entryId = response[0].messages[0].id;
-                    await client.xAck(redisClient.streams[i], redisClient.group, entryId);
+
+                    if(entryId in redisClient.response_buffer);
+                    {
+                        //
+                        parentPort.postMessage(response);
+                        client.xAck(redisClient.streams[i], redisClient.group, entryId);
+                    }
+
                 } else {
                     // Response is null, we have read everything that is
                     // in the stream right now...

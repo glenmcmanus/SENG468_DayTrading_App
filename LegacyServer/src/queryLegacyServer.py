@@ -6,15 +6,10 @@ import Common.src.RedisStreams as RedisStreams
 import threading
 
 
-def handle_stream_in(message):
-    print(message, flush=True)
-    #RedisStreams.client.xack('quote', 'fetch', message.id)
+#redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('quote_in', 'fetch', handle_stream_in,))
 
 
-redis_listener = threading.Thread(target=RedisStreams.start_listener, args=('quote_in', 'fetch', handle_stream_in,))
-redis_listener.start()
-
-RedisStreams.write_to_stream('quote_out', {'quote': RedisStreams.container_id})
+#RedisStreams.write_to_stream('quote_out', {'quote': RedisStreams.container_id})
 
 
 #This code is incomplete
@@ -48,7 +43,7 @@ async def query_server(stock_symbol, username):
 def process_request(stock_symbol, username):
     query_string = query_server(stock_symbol, username)
     print("Response: ", query_string)
-    return query_string.split(" ")
+    return query_string.split(",")
 
 
 async def handle_request(reader, writer):
@@ -81,42 +76,28 @@ async def handle_request(reader, writer):
         # todo: log response
 
 
-async def service_loop():
-    if os.environ.__contains__("FETCH_IP"):
-        print(os.environ["FETCH_IP"])
-        my_ip = os.environ["FETCH_IP"]
-    else:
-        my_ip = "127.0.0.1"
+def main():
 
-    if os.environ.__contains__("FETCH_PORT"):
-        print(os.environ["FETCH_PORT"])
-        my_port = os.environ["FETCH_PORT"]
-    else:
-        my_port = 8888
+    try:
+        RedisStreams.client.xgroup_create('quote_in', 'fetch', 0, mkstream=True)
+    except:
+        print("quote_in exists")
 
-    server = await asyncio.start_server(
-        handle_request, '', my_port)
+    try:
+        RedisStreams.client.xgroup_create('quote_out', 'fetch', 0, mkstream=True)
+    except:
+        print("quote_out exists")
 
-    addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
-    print(f'Serving on {addrs}', flush=True)
-
-    async with server:
-        await server.serve_forever()
-
-
-asyncio.run(service_loop())
+    while True:
+        for _stream, messages in RedisStreams.client.xreadgroup('fetch', RedisStreams.container_id, {'quote_in': '>'}, 1, block=5000):
+            print('listen to stream: ', _stream)
+            for message in messages:
+                print(message, flush=True)
+                response = process_request(message[1]['userID'], message[1]['stock'])
+                log_request(response)
+                RedisStreams.write_to_stream('quote_out', response)
+                RedisStreams.client.xack('quote_in', 'tx', message[0])
 
 
-#def main():
-#    stock_info = process_request("TES", "fakeUser")
-#    print(stock_info)
-#    print(stock_info[0])
-#    print(stock_info[1])
-#    print(stock_info[2])
-#    print(stock_info[3])
-#    print(stock_info[4])
-
-
-#if __name__ == "__main__":
-#    main()
-
+RedisStreams.client = RedisStreams.connect()
+main()
