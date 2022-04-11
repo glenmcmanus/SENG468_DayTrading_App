@@ -5,7 +5,7 @@ import Common.src.Logging as Logging
 import Common.src.RedisStreams as RedisStreams
 import pymongo
 import time
-
+import TransactionServer.src.cache
 
 async def handle_user_request(reader, writer):
     while True:
