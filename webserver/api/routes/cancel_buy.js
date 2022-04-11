@@ -4,6 +4,10 @@ var express = require('express');
 var router = express.Router();
 var transaction_client = require('../transaction_client.js');
 
+const redis_client = require('../redis_client.js');
+const redis_listener = require('../redis_listener')
+
+
 /* GET users listing. */
 router.get('/', function(req, res, next) {
 //res.render('index', { title: 'CANCEL' });

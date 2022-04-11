@@ -5,6 +5,9 @@ const mongo = require('../db')
 var express = require('express');
 var router = express.Router();
 
+const redis_client = require('../redis_client.js');
+const redis_listener = require('../redis_listener')
+
 /* GET users listing. */
 router.get('/', function(req, res, next) {
   res.send('DISPLAY_SUMMARY');
