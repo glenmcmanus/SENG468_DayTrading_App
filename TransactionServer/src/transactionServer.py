@@ -5,7 +5,7 @@ import Common.src.Logging as Logging
 import Common.src.RedisStreams as RedisStreams
 import pymongo
 import time
-import threading
+
 
 async def handle_user_request(reader, writer):
     while True:
@@ -39,62 +39,61 @@ async def handle_request(request):
 #request[1] = userid
 #request[2] = funds/stocksymbol
 #request[3] = amount
-    if request[0] == Const.ADD:
-        Logging.log_add_funds(request[1], request[2])
-        return await add_funds(request[1], request[2])
+    if request[b'command'] == b'ADD':
+        Logging.log_add_funds(request[b'userID'], request[b'value'])
+        return await add_funds(request[b'userID'].decode("utf-8"), request[b'value'].decode("utf-8"))
 
-    elif request[0] == Const.BUY:
-        Logging.log_buy(request[1], request[2], request[3])
-        return await buy(request[1], request[2], request[3])
+    elif request[b'command'] == b'BUY':
+        Logging.log_buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+        return await buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
 
-    elif request[0] == Const.COMMIT_BUY:
-        Logging.log_commit_buy(request[1])
-        return await commit_buy(request[1])
+    elif request[b'command'] == b'COMMIT_BUY':
+        Logging.log_commit_buy(request[b'userID'].decode("utf-8") )
+        return await commit_buy(request[b'userID'].decode("utf-8") )
 
-    elif request[0] == Const.CANCEL_BUY:
-        Logging.log_cancel_buy(request[1])
-        return await cancel_buy(request[1])
+    elif request[b'command'] == b'CANCEL_BUY':
+        Logging.log_cancel_buy(request[b'userID'].decode("utf-8"))
+        return await cancel_buy(request[b'userID'].decode("utf-8"))
 
-    elif request[0] == Const.SELL:
-        Logging.log_sell(request[1], request[2], request[3])
-        return await sell(request[1], request[2], request[3])
+    elif request[b'command'] == b'SELL':
+        Logging.log_sell(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+        return await sell(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
 
-    elif request[0] == Const.CANCEL_SELL:
-        Logging.log_cancel_sell(request[1])
-        return await cancel_sell(request[1])
+    elif request[b'command'] == b'COMMIT_SELL':
+        Logging.log_commit_sell(request[b'userID'].decode("utf-8"))
+        return await commit_sell(request[b'userID'].decode("utf-8"))
 
-    elif request[0] == Const.SET_BUY_AMOUNT:
-        Logging.log_set_buy_amount(request[1], request[2], request[3])
-        return await set_buy_amount(request[1], request[2], request[3])
+    elif request[b'command'] == b'CANCEL_SELL':
+        Logging.log_cancel_sell(request[b'userID'].decode("utf-8"))
+        return await cancel_sell(request[b'userID'].decode("utf-8"))
 
-    elif request[0] == Const.CANCEL_SET_BUY:
-        Logging.log_cancel_set_buy(request[1], request[2])
-        return await cancel_set_buy(request[1], request[2])
+    elif request[b'command'] == b'SET_BUY_AMOUNT':
+        Logging.log_set_buy_amount(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+        return await set_buy_amount(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
 
-    elif request[0] == Const.SET_BUY_TRIGGER:
-        Logging.log_set_buy_trigger(request[1], request[2], request[3])
-        return await set_buy_trigger(request[1], request[2], request[3])
+    elif request[b'command'] == b'CANCEL_SET_BUY':
+        Logging.log_cancel_set_buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"))
+        return await cancel_set_buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"))
 
-    elif request[0] == Const.SET_SELL_AMOUNT:
-        Logging.log_set_sell_amount(request[1], request[2], request[3])
-        return await set_sell_amount(request[1], request[2], request[3])
+    elif request[b'command'] == b'SET_BUY_TRIGGER':
+        Logging.log_set_buy_trigger(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+        return await set_buy_trigger(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
 
-    elif request[0] == Const.SET_SELL_TRIGGER:
-        Logging.log_set_sell_trigger(request[1], request[2], request[3])
-        return await set_sell_trigger(request[1], request[2], request[3])
+    elif request[b'command'] == b'SET_SELL_AMOUNT':
+        Logging.log_set_sell_amount(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+        return await set_sell_amount(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
 
-    elif request[0] == Const.CANCEL_SET_SELL:
-        Logging.log_cancel_set_sell(request[1], request[2])
-        return await cancel_set_sell(request[1], request[2])
+    elif request[b'command'] == b'SET_SELL_TRIGGER':
+        Logging.log_set_sell_trigger(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+        return await set_sell_trigger(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
+
+    elif request[b'command'] == b'CANCEL_SET_SELL':
+        Logging.log_cancel_set_sell(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"))
+        return await cancel_set_sell(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"))
 
     else:
-        if Const.TRANSACTION_BYTE_TO_STR.__contains__(request[0]):
-            request[0] = Const.TRANSACTION_BYTE_TO_STR[request[0]]
-        else:
-            request[0] = "Unknown"
         Logging.log_error(request, "Error: Unexpected request")
-        return "Unexpected request: " + str(request[0])
-
+        return "Unexpected request: " + request[b'command'].decode("utf-8")
 
 
 async def add_funds(userid, amount):
@@ -520,17 +519,12 @@ async def cancel_set_sell(userid, stock_symbol):
     return "unhandled error"
 
 
-def main():
+async def main():
 
     try:
         RedisStreams.client.xgroup_create('command_in', 'tx', mkstream=True)
     except:
         print('exception in xgroup_create command_in')
-
-    try:
-        RedisStreams.client.xgroup_create('command_out', 'tx', mkstream=True)
-    except:
-        print('exception in xgroup_create command_out')
 
     while True:
         for _stream, messages in RedisStreams.client.xreadgroup('tx', RedisStreams.container_id, {'command_in': '>'}, 1, block=100):
@@ -538,7 +532,7 @@ def main():
             for message in messages:
                 print(message, flush=True)
 
-                response = handle_request(message[1])
+                response = await handle_request(message[1])
 
                 RedisStreams.client.xadd('command_out', {'response': response})
                 RedisStreams.client.xack('command_in', 'tx', message[0])
@@ -552,6 +546,6 @@ def main():
 RedisStreams.client = RedisStreams.connect()
 db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
 db = db_client.DayTrading
+Logging.set_db(db)
 
-main()
-
+asyncio.run(main())

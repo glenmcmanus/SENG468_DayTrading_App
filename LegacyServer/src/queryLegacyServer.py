@@ -83,11 +83,6 @@ def main():
     except:
         print("quote_in exists")
 
-    try:
-        RedisStreams.client.xgroup_create('quote_out', 'fetch', 0, mkstream=True)
-    except:
-        print("quote_out exists")
-
     while True:
         for _stream, messages in RedisStreams.client.xreadgroup('fetch', RedisStreams.container_id, {'quote_in': '>'}, 1, block=5000):
             print('listen to stream: ', _stream)
@@ -100,4 +95,4 @@ def main():
 
 
 RedisStreams.client = RedisStreams.connect()
-main()
+asyncio.run(main())

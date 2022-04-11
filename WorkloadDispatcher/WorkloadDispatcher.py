@@ -52,7 +52,7 @@ def thread_function(user_workload):
             time.sleep(int(line[1]))
             continue
 
-        print("line after split: ", line)
+        #print("line after split: ", line)
         req_str = 'http://localhost:5100/' + line[0].lower()
 
         if len(line) > 1:
@@ -102,7 +102,7 @@ def thread_function(user_workload):
         # print(req_str)
         # print(data)
         res = requests.put(req_str, json=data)
-        # print(res, res.content)
+        #print(res, res.content)
         res.close()
 
 
@@ -169,7 +169,7 @@ def main():
             time.sleep(int(line[1]))
             continue
 
-        #print("line after split: ", line)
+        print("line after split: ", line)
         req_str = 'http://localhost:5100/' + line[0].lower()
 
         if len(line) > 1:
