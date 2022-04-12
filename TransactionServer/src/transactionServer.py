@@ -2,8 +2,7 @@ import asyncio
 import os
 import Common.src.Constants as Const
 import Common.src.Logging as Logging
-import TransactionServer.src.cache as cache
-import Common.src.RedisStreams as RedisStreams
+import Common.src.Cache as Cache
 import pymongo
 import time
 #import dns.resolver
@@ -72,479 +71,356 @@ async def handle_request(request):
         return "Unexpected request: " + request[b'command'].decode("utf-8")
 
 
+def user_not_found(command, userid):
+    #print("User ", userid, " not found!", flush=True)
+    err_msg = "Error: Invalid user"
+    Logging.log_error(["command", userid], err_msg)
+    return err_msg
+
+
 async def add_funds(userid, amount):
     print("User ", userid, " add $", amount)
 
-    res = db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": float(amount)}})
-    print(f"Update result: {res.raw_result!r}", flush=True)
+    user = db.User.find_one({"UserID": userid})
+    if user is None:
+        return user_not_found("ADD_FUNDS", userid)
 
-    user = db['User'].find_one({"UserID": userid})
-    print(f"DB user result: {user!r}", flush=True)
+    res = db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": float(amount)}})
+    Cache.client.hset(userid, Const.CACHE_BALANCE, user['AccountBalance'] + float(amount))
 
     if res.acknowledged:
-        print("Add funds Ack")
         return "Add success"
     else:
-        print("Add funds no ack")
-        Logging.log_error(["ADD", userid], "Error: failed to add funds")
-        return "Add fail"
+        Logging.log_error(["ADD", userid], "Error: DB failed to add funds")
+        return "Add failed"
 
 
-async def quote(userid, stock_symbol):
-    #global fetch_reader, fetch_writer
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-    user = db['User'].find_one({"UserID":userid})
+async def quote(userid, stock):
+    Cache.write_to_stream(Const.STREAM_QUOTE_IN, {'userID': userid, 'stock': stock})
+    start_id = str(time.time()) + '-0'
 
-    print(f"DB user result: {user!r}", flush=True)
+    for stream, messages in Cache.client.xreadgroup('tx', Cache.container_id, {Const.STREAM_QUOTE_OUT: start_id}, 1,
+                                                    block=100):
+        for message in messages:
+            if message[1]['stock'] == stock:
+                return message[1]['price']
 
-    stock = str(stock_symbol)
 
-    if user is not None:
-        print("User ", userid, " searched for ", stock, flush=True)
-        timestamp = time.time()
-        if(timestamp):
-            user = db.User.update_one({"UserID": userid}, {"$set": {"Quote": {"Timestamp": timestamp,"Stock": stock_symbol}}})
-            return "ok"
-        else:
-            Logging.log_error(["QUOTE", userid], "Error: Search could not be completed")
-            print("User ", userid, " search could not be completed for ", stock, flush=True)
-            return "SEARCHERROR"
+async def buy(userid, stock, amount):
+    if Cache.client.hexists(userid, Const.CACHE_BALANCE):
+        balance = float(Cache.client.hget(userid, Const.CACHE_BALANCE))
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["QUOTE", userid], "Error: Invalid user")
-        return "invalid user"
-
-    return "unhandled error"
-
-
-async def buy(userid, stock_symbol, amount):
-    user = db.User.find_one({"UserID": userid})
-
-    print(f"DB user result: {user!r}", flush=True)
+        user = db.User.find_one({"UserID": userid})
+        if user is None:
+            return user_not_found("BUY", userid)
+        else:
+            balance = float(user['AccountBalance'])
 
     amount = float(amount)
 
-    # Add transaction as pending confirmation from user & delete any previous pending transactions
-    if cache.get_pending_transaction(userid, 'BUY'):
-        cache.delete_pending_transaction(userid, 'BUY')
-    cache.add_pending_transaction(userid, 'BUY', stock_symbol, amount, time.time())
-
-    if user is not None:
-        if user["AccountBalance"] >= amount:
-            print("User ", userid, " buy $", amount, " of ", stock_symbol, flush=True)
-            timestamp = time.time()
-
-            pending_buy = {"Timestamp": timestamp,
-                           "Stock": stock_symbol,
-                           "Amount": amount}
-
-            result = db.User.update_one({"UserID": userid}, {"$set": {"PendingBuy": pending_buy}})
-
-            print(f"DB user set result: {result.raw_result!r}", flush=True)
-
-            return "ok"
-        else:
-            Logging.log_error(["BUY", userid], "Error: Insufficient funds")
-            print("User ", userid, " non-sufficient funds (NSF)", flush=True)
-            return "NSF"
+    if balance < amount:
+        Logging.log_error(["BUY", userid], "Error: Insufficient funds")
+        print("User ", userid, " non-sufficient funds (NSF)", flush=True)
+        return "NSF"
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["BUY", userid], "Error: Invalid user")
-        return "invalid user"
+        if Cache.client.hexists(Const.CACHE_STOCK, stock):
+            stock_price = float(Cache.client.hget(Const.CACHE_STOCK, stock))
+        else:
+            stock_price = float(await quote(userid, stock))
 
-    return "unhandled error"
+        count = (amount / stock_price).__floor__()
+
+        if count == 0:
+            err_msg = "Invalid purchase: minimum price of stock " + stock + " is $" + stock_price
+            Logging.log_error(["BUY", userid], err_msg)
+            return err_msg
+
+        print("User ", userid, " buy ", count, " units of ", stock, flush=True)
+
+        timestamp = time.time()
+        pending_buy = {"Timestamp": timestamp,
+                       "Stock": stock,
+                       "Count": count,
+                       "Price": stock_price * count}
+
+        Cache.client.hset(userid, Const.CACHE_PENDING_BUY, pending_buy)
+        return "Purchase pending"
 
 
 async def commit_buy(userid):
+    if not Cache.client.hexists(userid, Const.CACHE_PENDING_BUY):
+        err_msg = "Error: No pending stock purchase for user " + userid
+        Logging.log_error(["COMMIT_BUY", userid], err_msg)
+        return err_msg
+
+    pending_buy = Cache.client.hget(userid, Const.CACHE_PENDING_BUY)
+    Cache.client.hdel(userid, Const.CACHE_PENDING_BUY)
+
+    now = time.time()
+    elapsed = now - int(pending_buy["Timestamp"])
+
+    if elapsed > 60:
+        Logging.log_error(["COMMIT_BUY", userid], "Error: Failed to commit buy; time elapsed: " + str(elapsed))
+        return "Time window exceeded by " + str(elapsed - 60) + "s"
+
     user = db.User.find_one({"UserID": userid})
-    print(f"DB user result: {user!r}", flush=True)
+    if user is None:
+        return user_not_found("COMMIT_BUY", userid)
 
-    # Ensure latest buy command exists 
-    pending_transaction = cache.get_pending_transaction(userid, 'BUY')
-    if not pending_transaction:
-        return 'No pending BUY transaction found'
-
-    if user is not None:
-        if not user.__contains__("PendingBuy") or user['PendingBuy'] is None:
-            return "No pending buy"
-        else:
-            now = time.time()
-            elapsed = now - int(user["PendingBuy"]["Timestamp"])
-
-            print("Timestamps(then,now,elapsed): ", user["PendingBuy"]["Timestamp"], now, elapsed, flush=True)
-
-            if elapsed <= 60:
-                print("User ", userid, " Commit buy")
-                db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": -int(user["PendingBuy"]["Amount"])}})
-                db.User.update_one({"UserID": userid}, {"$set": {"PendingBuy": None}})
-
-                user = db.User.find_one({"UserID": userid})
-                print(f"DB user after commit buy: {user!r}", flush=True)
-
-                #todo: update stock portfolio
-                return "Success"
-            else:
-                print("User ", userid, " Failed to commit buy. Elapsed: ", elapsed)
-                Logging.log_error(["COMMIT_BUY", userid], "Error: Failed to commit buy; time elapsed: " + str(elapsed))
-                return "Time window exceeded by " + str(elapsed - 60) + "s"
+    if Cache.client.hexists(userid, Const.CACHE_BALANCE):
+        balance = float(Cache.client.hget(userid, Const.CACHE_BALANCE))
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["COMMIT_BUY", userid], "Error: Invalid user")
-        return "invalid user"
+        balance = float(user['AccountBalance'])
 
-    return "unhandled error"
+    if balance < pending_buy['Price'] * pending_buy['Count']:
+        err_msg = "Error: Insufficient funds; there must be a buy trigger set."
+        Logging.log_error(["COMMIT_BUY", userid], err_msg)
+        return err_msg
+
+    db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": -float(pending_buy["Price"])}})
+    Cache.client.hset(userid, Const.CACHE_BALANCE, balance - float(pending_buy["Price"]))
+    db.StockPortfolio.update_one({"UserID": userid}, {"$inc": {pending_buy['Stock']: float(pending_buy['Count'])}},
+                                 upsert=True)
+    return "Committed purchase"
 
 
 async def cancel_buy(userid):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
+    if Cache.client.hexists(userid, Const.CACHE_PENDING_BUY):
+        err_msg = "Error: No pending purchase for user " + userid
+        Logging.log_error(["CANCEL_BUY", userid], err_msg)
+        return err_msg
 
-    user = db['User'].find_one({"UserID":userid})
+    Cache.client.hdel(userid, Const.CACHE_PENDING_BUY)
+    return "Purchase cancelled"
 
-    print(f"DB user result: {user!r}", flush=True)
 
-    # Ensure latest buy command exists 
-    pending_transaction = cache.get_pending_transaction(userid, 'BUY')
-    if not pending_transaction:
-        return 'No pending BUY transaction found'
+async def sell(userid, stock, amount):
+    user_portfolio = db.StockPortfolio.find_one({"UserID": userid})
+    if user_portfolio is None:
+        err_msg = "Error: No portfolio found for user " + userid
+        Logging.log_error(["SELL", userid], err_msg)
+        return err_msg
 
-    if user is not None:
-        if not user.__contains__("PendingBuy") or user['PendingBuy'] is None:
-            return "No pending buy"
-        else:
-            now = time.time()
-            elapsed = now - int(user["PendingBuy"]["Timestamp"])
+    if not user_portfolio.__contains__(stock):
+        err_msg = "Error: No stock, " + stock + ", found for user " + userid
+        Logging.log_error(["SELL", userid], err_msg)
+        return err_msg
 
-            print("Timestamps(then,now,elapsed): ", user["PendingBuy"]["Timestamp"], now, elapsed, flush=True)
-
-            if elapsed <= 60:
-                user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelBuy": {"Timestamp": now}}})
-                return "ok"
-            else:
-                Logging.log_error(["CANCEL_BUY", userid], "Error: Cancel could not be completed")
-                print("User ", userid, " cancel could not be completed", flush=True)
-                return "CANCELERRORBUY"
+    if Cache.client.exists(stock):
+        stock_price = float(Cache.client.get(stock))
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["CANCEL_BUY", userid], "Error: Invalid user")
-        return "invalid user"
-
-    return "unhandled error"
-
-
-async def sell(userid, stock_symbol, amount):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-
-    user = db['User'].find_one({"UserID":userid})
-
-    print(f"DB user result: {user!r}", flush=True)
+        stock_price = float(await quote(userid, stock))
 
     amount = float(amount)
+    count = (amount / stock_price).__floor__()
 
-    if cache.get_pending_transaction(userid, 'SELL'):
-        cache.delete_pending_transaction(userid, 'SELL')
-    cache.add_pending_transaction(userid, 'SELL', stock_symbol, amount, time.time())
+    if count > int(user_portfolio[stock]):
+        err_msg = "Error: User, " + userid + ", does not own " + str(count) + " units of " + stock
+        Logging.log_error(["SELL", userid], err_msg)
+        return err_msg
 
-    if user is not None:
-        #Not exactly sure how to get User's amount of a certain stock
-        if user["AccountBalance"] >= amount:
-            print("User ", userid, " sells ", amount, " of ", stock_symbol, flush=True)
-            timestamp = time.time()
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"PendingSell": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
-            return "ok"
-        else:
-            Logging.log_error(["SELL", userid], "Error: Insufficient Stock Amount")
-            print("User ", userid, " Insufficient stock amount (ISA)", flush=True)
-            return "ISA"
-    else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SELL", userid], "Error: Invalid user")
-        return "invalid user"
+    pending_sale = {"Timestamp": time.time(),
+                    "Stock": stock,
+                    "Count": count,
+                    "Price": stock_price * count}
 
-    return "unhandled error"
+    Cache.client.hset(userid, Const.CACHE_PENDING_SELL, pending_sale)
+    return "Sell pending"
 
 
 async def commit_sell(userid):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-
-    user = db['User'].find_one({"UserID":userid})
-
-    print(f"DB user result: {user!r}", flush=True)
-
-    # Ensure latest sell command exists 
-    pending_transaction = cache.get_pending_transaction(userid, 'SELL')
-    if not pending_transaction:
-        return 'No pending SELL transaction found'
-
-    if user is not None:
-        if not user.__contains__("PendingSell") or user['PendingSell'] is None:
-            return "No pending sell"
-        else:
-        # print("User ", userid, " committed buy command", flush=True)
-            now = time.time()
-            elapsed = now - int(user["PendingSell"]["Timestamp"])
-            print("Timestamps(then,now,elapsed): ", user["PendingSell"]["Timestamp"], now, elapsed, flush=True)
-        #check pending sell ~60s ago
-            if elapsed <= 60:
-                print("User ", userid, " Commit sell")
-                db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": int(user["PendingSell"]["Amount"])}})
-                db.User.update_one({"UserID": userid}, {"$set": {"PendingSell": None}})
-
-                user = db.User.find_one({"UserID": userid})
-                print(f"DB user after commit sell: {user!r}", flush=True)
-
-                #todo: update stock portfolio
-                return "Success"
-            else:
-                Logging.log_error(["COMMIT_SELL", userid], "Error: Failed to commit sell; time elapsed: " + str(elapsed))
-                print("User ", userid, " Failed to commit sell. Elapsed: ", elapsed)
-                return "Time window exceeded by " + str(elapsed - 60) + "s"
+    if not Cache.client.hexists(userid, Const.CACHE_PENDING_SELL):
+        err_msg = "Error: No pending stock sale for user " + userid
+        Logging.log_error(["COMMIT_SELL", userid], err_msg)
+        return err_msg
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["COMMIT_SELL", userid], "Error: Invalid user")
-        return "invalid user"
+        pending_sale = Cache.client.hget(userid, Const.CACHE_PENDING_SELL)
+        Cache.client.hdel(userid, Const.CACHE_PENDING_SELL)
 
-    return "unhandled error"
+    user = db.User.find_one({"UserID": userid})
+    if user is None:
+        return user_not_found("COMMIT_SELL", userid)
+
+    user_portfolio = db.StockPortfolio.find_one({"UserID": userid})
+    if user_portfolio[pending_sale['Stock']] < pending_sale['Count']:
+        err_msg = "Error: Insufficient ownership of stock to complete sale. User must have an open sale for this stock."
+        Logging.log_error(["COMMIT_SELL", userid], err_msg)
+        return err_msg
+
+    now = time.time()
+    elapsed = now - int(pending_sale["Timestamp"])
+    print("Timestamps(then,now,elapsed): ", user["PendingSell"]["Timestamp"], now, elapsed, flush=True)
+    if elapsed <= 60:
+        print("User ", userid, " Commit sell")
+        db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": int(user["PendingSell"]["Amount"])}})
+        user_portfolio.update_one({"UserID": userid}, {"$inc": {pending_sale['Stock']: -int(pending_sale['Count'])}})
+        return "Success"
+    else:
+        Logging.log_error(["COMMIT_SELL", userid], "Error: Failed to commit sell; time elapsed: " + str(elapsed))
+        print("User ", userid, " Failed to commit sell. Elapsed: ", elapsed)
+        return "Time window for sale exceeded by " + str(elapsed - 60) + "s"
 
 
 async def cancel_sell(userid):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
+    if not Cache.client.hexists(userid, Const.CACHE_PENDING_SELL):
+        err_msg = "Error: No pending sale for user " + userid
+        Logging.log_error(["CANCEL_SELL", userid], err_msg)
+        return err_msg
 
-    user = db['User'].find_one({"UserID":userid})
+    Cache.client.hdel(userid, Const.CACHE_PENDING_SELL)
+    return "Sale cancelled"
 
-    print(f"DB user result: {user!r}", flush=True)
 
-    # Ensure latest sell command exists
-    pending_transaction = cache.get_pending_transaction(userid, 'SELL')
-    if not pending_transaction:
-        return 'No pending SELL transaction found'
+async def set_buy_amount(userid, stock, amount):
+    user = db.User.find_one({"UserID": userid})
+    if user is None:
+        return user_not_found("SET_BUY_AMOUNT", userid)
 
-    if user is not None:
-        if not user.__contains__("PendingSell") or user['PendingSell'] is None:
-            return "No pending sell"
-        else:
-            now = time.time()
-            elapsed = now - int(user["PendingSell"]["Timestamp"])
+    price_key = stock+"_buy_price"
 
-            print("Timestamps(then,now,elapsed): ", user["PendingSell"]["Timestamp"], now, elapsed, flush=True)
-
-            if elapsed <= 60:
-                user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSell": {"Timestamp": now}}})
-                return "ok"
-            else:
-                Logging.log_error(["CANCEL_SELL", userid], "Error: Cancel could not be completed")
-                print("User ", userid, " cancel could not be completed", flush=True)
-                return "CANCELERRORSELL"        
+    if Cache.client.hexists(price_key, userid):
+        price = Cache.client.hget(price_key, userid)
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["CANCEL_SELL", userid], "Error: Invalid user")
-        return "invalid user"
-
-    return "unhandled error"
-
-
-async def set_buy_amount(userid, stock_symbol, amount):
-    amount = float(amount)
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-
-    user = db['User'].find_one({"UserID":userid})
-
-    print(f"DB user result: {user!r}", flush=True)
-
-    if user is not None:
-        print("User ", userid, " is setting a buy for stock ", stock_symbol, " at price ", amount, flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        # check funds >= buy amount * stock price
-        #user.funds >= amount_of_stocks * stock_price
-        if user["AccountBalance"] >= amount:
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"SetBuyAmount": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
-            return "ok"
+        user_open_buys = db.OpenBuyTransactions.find_one({"UserID": userid})
+        if user_open_buys is None:
+            err_msg = "Error: No trigger exists for user. Set a trigger before setting the number to purchase."
+            Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
+            return err_msg
         else:
-            Logging.log_error(["SET_BUY_AMOUNT", userid], "Error: could not set a buy amount")
-            print("User ", userid, " can not set automated buy for ", stock_symbol, flush=True)
-            return "SETBUYERROR"
+            price = user_open_buys[stock]['Price']
+
+    amount = int(amount)
+
+    if user['AccountBalance'] < amount * float(price):
+        err_msg = "Error: NSF for amount and trigger set"
+        Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
+        return err_msg
+
+    result = db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
+                                               upsert=True)
+
+    print("After set buy amount: ", result.raw_result, flush=True)
+    Cache.client.hset(stock+"_buy_count", userid, amount)
+
+    return "Buy amount set"
+
+
+async def cancel_set_buy(userid, stock):
+    key = stock+"_buy_count"
+    if Cache.client.hexists(key, userid):
+        Cache.client.hdel(key, userid)
+
+    key = stock+"_buy_price"
+    if Cache.client.hexists(key, userid):
+        Cache.client.hdel(key, userid)
+
+    result = db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": 0}}})
+    print("After cancel set buy: ", result.raw_result, flush=True)
+    return "Cancelled buy trigger"
+
+async def set_buy_trigger(userid, stock, price):
+    user = db.User.find_one({"UserID": userid})
+    if user is None:
+        return user_not_found("SET_BUY_TRIGGER", userid)
+
+    price = float(price)
+
+    if user["AccountBalance"] < price:
+        err_msg = "Error: could not set a buy trigger"
+        Logging.log_error(["SET_BUY_TRIGGER", userid], err_msg)
+        print("User ", userid, " can not set automated buy for ", stock, flush=True)
+        return err_msg
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SET_BUY_AMOUNT", userid], "Error: Invalid user")
-        return "invalid user"
+        result = db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Price": price}}},
+                                                   upsert=True)
 
-    return "unhandled error"
+        print("After set buy amount: ", result.raw_result, flush=True)
+        Cache.client.hset(stock + "_buy_price", userid, price)
+        return "Buy trigger set"
 
 
-async def cancel_set_buy(userid, stock_symbol):
-    # check existing "set buy" for stock
-    print(db.list_collection_names())
-    print(list(db.User.find()))
+async def set_sell_amount(userid, stock, amount):
+    amount = int(amount)
 
-    user = db['User'].find_one({"UserID":userid})
-
-    print(f"DB user result: {user!r}", flush=True)
-
-    if user is not None:
-        print("User ", userid, " committed buy command", flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        #check pending sell ~60s ago
-        if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSetBuy": {"Timestamp": timestamp,"Stock": stock_symbol}}})
-            return "ok"
-        else:
-            Logging.log_error(["CANCEL_SET_BUY", userid], "Error: Cancel could not be completed")
-            print("User ", userid, " cancel could not be completed", flush=True)
-            return "CANCELERRORSETBUY"
+    user_portfolio = db.StockPortfolio.find_one({"UserID": userid})
+    if user_portfolio is None:
+        err_msg = "Error: Cannot set sell amount, user owns no stock."
+        Logging.log_error(["SET_SELL_AMOUNT", userid], err_msg)
+        return err_msg
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["CANCEL_SET_BUY", userid], "Error: Invalid user")
-        return "invalid user"
+        if stock not in user_portfolio:
+            err_msg = "Error: User does not own shares in " + stock
+            Logging.log_error(["SET_SELL_AMOUNT", userid], err_msg)
+            return err_msg
+        elif int(user_portfolio[stock]) < amount:
+            err_msg = "Error: User has fewer shares than the specified sell amount."
+            Logging.log_error(["SET_SELL_AMOUNT", userid], err_msg)
+            return err_msg
 
-    return "unhandled error"
+    amount = int(amount)
+    result = db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
+                                                upsert=True)
+
+    print("After set sell amount: ", result.raw_result, flush=True)
+    Cache.client.hset(stock + "_sell_count", userid, amount)
+
+    return "Sell amount set"
 
 
-async def set_buy_trigger(userid, stock_symbol, amount):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-
-    user = db['User'].find_one({"UserID":userid})
-
-    print(f"DB user result: {user!r}", flush=True)
-
-    amount = float(amount)
-
-    if user is not None:
-        print("User ", userid, " is setting a buy trigger for stock ", stock_symbol, " at price ", amount, flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        # check funds >= buy amount * stock price at trigger value
-        if user["AccountBalance"] >= amount:
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"SetBuyTrigger": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
-            return "ok"
-        else:
-            Logging.log_error(["SET_BUY_TRIGGER", userid], "Error: could not set a buy trigger")
-            print("User ", userid, " can not set automated buy for ", stock_symbol, flush=True)
-            return "SETBUYTRIGGERERROR"
+async def set_sell_trigger(userid, stock, price):
+    user_portfolio = db.StockPortfolio.find_one({"UserID": userid})
+    if user_portfolio is None:
+        err_msg = "Error: Cannot set sell amount, user owns no stock."
+        Logging.log_error(["SET_SELL_TRIGGER", userid], err_msg)
+        return err_msg
     else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SET_BUY_TRIGGER", userid], "Error: Invalid user")
-        return "invalid user"
+        if stock not in user_portfolio:
+            err_msg = "Error: User does not own shares in " + stock
+            Logging.log_error(["SET_SELL_TRIGGER", userid], err_msg)
+            return err_msg
 
-    return "unhandled error"
+    price = float(price)
+    result = db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Price": price}}},
+                                                upsert=True)
 
-
-async def set_sell_amount(userid, stock_symbol, amount):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-
-    user = db['User'].find_one({"UserID":userid})
-
-    print(f"DB user result: {user!r}", flush=True)
-
-    amount = float(amount)
-
-    if user is not None:
-        print("User ", userid, " is setting a sell for stock ", stock_symbol, " at price ", amount, flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        # check #of stocks owned >= stocks wanting to sell
-        if user["AccountBalance"] >= amount:
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"SetSellAmount": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
-            return "ok"
-        else:
-            Logging.log_error(["SET_SELL_AMOUNT", userid], "Error: could not set a sell amount")
-            print("User ", userid, " can not set automated sell for ", stock_symbol, flush=True)
-            return "SETSELLERROR"
-    else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SET_BUY_AMOUNT", userid], "Error: Invalid user")
-        return "invalid user"
-
-    return "unhandled error"
+    Cache.client.hset(stock + "_sell_price", userid, price)
+    return 'Sell trigger set'
 
 
-async def set_sell_trigger(userid, stock_symbol, amount):
-    print(db.list_collection_names())
-    print(list(db.User.find()))
+async def cancel_set_sell(userid, stock):
+    key = stock + "_buy_count"
+    if Cache.client.hexists(key, userid):
+        Cache.client.hdel(key, userid)
 
-    user = db['User'].find_one({"UserID":userid})
+    key = stock + "_buy_price"
+    if Cache.client.hexists(key, userid):
+        Cache.client.hdel(key, userid)
 
-    print(f"DB user result: {user!r}", flush=True)
+    result = db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": 0}}})
 
-    amount = float(amount)
-
-    if user is not None:
-        print("User ", userid, " is setting a sell trigger for stock ", stock_symbol, " at price ", amount, flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        # check number of stocks owned >= number fo stocks wanting to sell
-        if user["AccountBalance"] >= amount:
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"SetSellTrigger": {"Timestamp": timestamp,"Stock": stock_symbol,"Amount": amount}}})
-            return "ok"
-        else:
-            Logging.log_error(["SET_SELL_TRIGGER", userid], "Error: could not set a sell trigger")
-            print("User ", userid, " can not set automated sell for ", stock_symbol, flush=True)
-            return "SETSELLTRIGGERERROR"
-    else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["SET_SELL_TRIGGER", userid], "Error: Invalid user")
-        return "invalid user"
-
-    return "unhandled error"
-
-
-async def cancel_set_sell(userid, stock_symbol):
-    # check existing "set sell" for stock
-    print(db.list_collection_names())
-    print(list(db.User.find()))
-
-    user = db['User'].find_one({"UserID":userid})
-
-    print(f"DB user result: {user!r}", flush=True)
-
-    if user is not None:
-        print("User ", userid, " cancel set sell", flush=True)
-        timestamp = time.time()
-        print(timestamp)
-        #check pending sell ~60s ago
-        if(timestamp):
-            user = db['User'].update_one({"UserID": userid}, {"$set": {"CancelSetSell": {"Timestamp": timestamp,"Stock": stock_symbol}}})
-            return "ok"
-        else:
-            Logging.log_error(["CANCEL_SET_SELL", userid], "Error: Cancel could not be completed")
-            print("User ", userid, " cancel could not be completed", flush=True)
-            return "CANCELERRORSETSELL"
-    else:
-        print("User ", userid, " not found!", flush=True)
-        Logging.log_error(["CANCEL_SET_SELL", userid], "Error: Invalid user")
-        return "invalid user"
-
-    return "unhandled error"
+    return 'Cancelled sell trigger'
 
 
 async def main():
 
     try:
-        RedisStreams.client.xgroup_create('command_in', 'tx', mkstream=True)
+        Cache.client.xgroup_create('command_in', 'tx', mkstream=True)
     except:
         print('exception in xgroup_create command_in')
 
     while True:
-        for _stream, messages in RedisStreams.client.xreadgroup('tx', RedisStreams.container_id, {'command_in': '>'}, 1, block=100):
+        for _stream, messages in Cache.client.xreadgroup('tx', Cache.container_id, {'command_in': '>'}, 1, block=100):
             print('listen to stream: ', _stream)
             for message in messages:
                 print(message, flush=True)
 
                 response = await handle_request(message[1])
 
-                RedisStreams.client.xadd('command_out', {'response': response})
-                RedisStreams.client.xack('command_in', 'tx', message[0])
+                Cache.client.xadd('command_out', {'response': response})
+                Cache.client.xack('command_in', 'tx', message[0])
 
 
-RedisStreams.client = RedisStreams.connect()
+Cache.client = Cache.connect()
 db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
 db = db_client.DayTrading
 Logging.set_db(db)

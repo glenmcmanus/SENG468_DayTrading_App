@@ -2,8 +2,8 @@ import asyncio
 import os
 import time
 from subprocess import Popen, PIPE, run
-import Common.src.RedisStreams as RedisStreams
-
+import Common.src.Cache as RedisStreams
+import Common.src.Constants as Const
 
 #This code is incomplete
 
@@ -39,36 +39,6 @@ async def process_request(stock_symbol, username):
     return query_string.split(",")
 
 
-async def handle_request(reader, writer):
-    while True:
-        data = await reader.read(100)
-
-        print(f"Received {data}", flush=True)
-
-        message = data.decode()
-        addr = writer.get_extra_info('peername')
-
-        #todo: log request
-
-        print(f"Received {message!r} from {addr!r}", flush=True)
-
-        message = message.split(',')
-
-        if (len(message) < 2):
-            writer.write(''.encode())
-            await writer.drain()
-            continue
-
-        response = message[0] + ',' + process_request(message[0], message[1])
-        log_request(response)
-
-        print(f"Send: {response!r}")
-        writer.write(response.encode())
-        await writer.drain()
-
-        # todo: log response
-
-
 async def main():
 
     try:
@@ -84,6 +54,7 @@ async def main():
                 response = await process_request(message[1][b'userID'].decode('utf-8'), message[1][b'stock'].decode('utf-8'))
                 print(response, flush=True)
                 log_request(response)
+                RedisStreams.client.set(response[1], response[0], px=60999)
                 RedisStreams.write_to_stream('quote_out', {'stock': response[1], 'price': response[0]})
                 RedisStreams.client.xack('quote_in', 'tx', message[0])
 

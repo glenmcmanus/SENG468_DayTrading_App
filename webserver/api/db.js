@@ -63,7 +63,7 @@ async function register(userid) {
     }
 
     const user = new User({UserID: userid, AccountBalance:0.00});
-    redisClient.setHash('user', userid, user);
+    redisClient.setHash(userid, 'balance', 0.00);
 
     console.log("Pre-save " + userid + ":\n\n" + JSON.stringify(user));
 

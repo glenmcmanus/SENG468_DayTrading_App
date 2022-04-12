@@ -2,9 +2,11 @@ import time
 
 db = None
 
+
 def set_db(database):
     global db
     db = database
+
 
 def log_add_funds(userid, amount):
     event = {  "LogType": "UserCommandType",
@@ -18,7 +20,7 @@ def log_add_funds(userid, amount):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_buy(userid, StockSymbol, amount):
@@ -34,7 +36,7 @@ def log_buy(userid, StockSymbol, amount):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_commit_buy(userid):
@@ -49,7 +51,7 @@ def log_commit_buy(userid):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_cancel_buy(userid):
@@ -64,7 +66,7 @@ def log_cancel_buy(userid):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_sell(userid, StockSymbol, amount):
@@ -80,7 +82,7 @@ def log_sell(userid, StockSymbol, amount):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_commit_sell(userid):
@@ -95,7 +97,7 @@ def log_commit_sell(userid):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_cancel_sell(userid):
@@ -110,7 +112,7 @@ def log_cancel_sell(userid):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_set_buy_amount(userid, StockSymbol, amount):
@@ -126,7 +128,7 @@ def log_set_buy_amount(userid, StockSymbol, amount):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_cancel_set_buy(userid, StockSymbol):
@@ -142,7 +144,7 @@ def log_cancel_set_buy(userid, StockSymbol):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_set_buy_trigger(userid, StockSymbol, amount):
@@ -158,7 +160,7 @@ def log_set_buy_trigger(userid, StockSymbol, amount):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_set_sell_amount(userid, StockSymbol, amount):
@@ -174,7 +176,7 @@ def log_set_sell_amount(userid, StockSymbol, amount):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_set_sell_trigger(userid, StockSymbol, amount):
@@ -190,7 +192,7 @@ def log_set_sell_trigger(userid, StockSymbol, amount):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
 
 
 def log_cancel_set_sell(userid, StockSymbol):
@@ -215,4 +217,4 @@ def log_error(request, userid):
     eventLog = db['EventLog']
     event_id = eventLog.insert_one(event).inserted_id
     newlog = db['EventLog'].find_one({"username":userid})
-    print(f"DB log result: {newlog!r}", flush=True)
+    #print(f"DB log result: {newlog!r}", flush=True)
