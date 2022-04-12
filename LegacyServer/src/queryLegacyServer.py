@@ -51,11 +51,13 @@ async def main():
             print('listen to stream: ', _stream)
             for message in messages:
                 print(message, flush=True)
-                response = await process_request(message[1][b'userID'].decode('utf-8'), message[1][b'stock'].decode('utf-8'))
+                stock = message[1][b'stock'].decode('utf-8')
+                userid = message[1][b'userID'].decode('utf-8')
+                response = await process_request(stock, userid)
                 print(response, flush=True)
                 log_request(response)
-                RedisStreams.client.set(response[1], response[0], px=60999)
-                RedisStreams.write_to_stream('quote_out', {'stock': response[1], 'price': response[0]})
+                RedisStreams.client.set(stock, response[0], px=60999)
+                RedisStreams.write_to_stream('quote_out', {'stock': stock, 'price': response[0]})
                 RedisStreams.client.xack('quote_in', 'tx', message[0])
 
 

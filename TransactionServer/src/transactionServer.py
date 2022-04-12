@@ -1,3 +1,4 @@
+import json
 import asyncio
 import os
 import Common.src.Constants as Const
@@ -97,13 +98,11 @@ async def add_funds(userid, amount):
 
 async def quote(userid, stock):
     Cache.write_to_stream(Const.STREAM_QUOTE_IN, {'userID': userid, 'stock': stock})
-    start_id = str(time.time()) + '-0'
 
-    for stream, messages in Cache.client.xreadgroup('tx', Cache.container_id, {Const.STREAM_QUOTE_OUT: start_id}, 1,
-                                                    block=100):
-        for message in messages:
-            if message[1]['stock'] == stock:
-                return message[1]['price']
+    while not Cache.client.exists(stock):
+        time.sleep(0.1)
+
+    return float(Cache.client.get(stock))
 
 
 async def buy(userid, stock, amount):
@@ -123,15 +122,15 @@ async def buy(userid, stock, amount):
         print("User ", userid, " non-sufficient funds (NSF)", flush=True)
         return "NSF"
     else:
-        if Cache.client.hexists(Const.CACHE_STOCK, stock):
-            stock_price = float(Cache.client.hget(Const.CACHE_STOCK, stock))
+        if Cache.client.exists(stock):
+            stock_price = float(Cache.client.get(stock))
         else:
             stock_price = float(await quote(userid, stock))
 
-        count = (amount / stock_price).__floor__()
+        count = int(amount / stock_price)
 
         if count == 0:
-            err_msg = "Invalid purchase: minimum price of stock " + stock + " is $" + stock_price
+            err_msg = "Invalid purchase: minimum price of stock " + stock + " is $" + str(stock_price)
             Logging.log_error(["BUY", userid], err_msg)
             return err_msg
 
@@ -143,7 +142,7 @@ async def buy(userid, stock, amount):
                        "Count": count,
                        "Price": stock_price * count}
 
-        Cache.client.hset(userid, Const.CACHE_PENDING_BUY, pending_buy)
+        Cache.client.hset(userid, Const.CACHE_PENDING_BUY, json.dumps(pending_buy))
         return "Purchase pending"
 
 
@@ -153,7 +152,7 @@ async def commit_buy(userid):
         Logging.log_error(["COMMIT_BUY", userid], err_msg)
         return err_msg
 
-    pending_buy = Cache.client.hget(userid, Const.CACHE_PENDING_BUY)
+    pending_buy = json.loads(Cache.client.hget(userid, Const.CACHE_PENDING_BUY))
     Cache.client.hdel(userid, Const.CACHE_PENDING_BUY)
 
     now = time.time()
@@ -212,7 +211,7 @@ async def sell(userid, stock, amount):
         stock_price = float(await quote(userid, stock))
 
     amount = float(amount)
-    count = (amount / stock_price).__floor__()
+    count = int(amount / stock_price)
 
     if count > int(user_portfolio[stock]):
         err_msg = "Error: User, " + userid + ", does not own " + str(count) + " units of " + stock
@@ -224,7 +223,7 @@ async def sell(userid, stock, amount):
                     "Count": count,
                     "Price": stock_price * count}
 
-    Cache.client.hset(userid, Const.CACHE_PENDING_SELL, pending_sale)
+    Cache.client.hset(userid, Const.CACHE_PENDING_SELL, json.dumps(pending_sale))
     return "Sell pending"
 
 
@@ -234,8 +233,16 @@ async def commit_sell(userid):
         Logging.log_error(["COMMIT_SELL", userid], err_msg)
         return err_msg
     else:
-        pending_sale = Cache.client.hget(userid, Const.CACHE_PENDING_SELL)
+        pending_sale = json.loads(Cache.client.hget(userid, Const.CACHE_PENDING_SELL))
         Cache.client.hdel(userid, Const.CACHE_PENDING_SELL)
+
+    now = time.time()
+    elapsed = now - int(pending_sale["Timestamp"])
+
+    if elapsed > 60:
+        Logging.log_error(["COMMIT_SELL", userid], "Error: Failed to commit sell; time elapsed: " + str(elapsed))
+        print("User ", userid, " Failed to commit sell. Elapsed: ", elapsed)
+        return "Time window for sale exceeded by " + str(elapsed - 60) + "s"
 
     user = db.User.find_one({"UserID": userid})
     if user is None:
@@ -247,19 +254,11 @@ async def commit_sell(userid):
         Logging.log_error(["COMMIT_SELL", userid], err_msg)
         return err_msg
 
-    now = time.time()
-    elapsed = now - int(pending_sale["Timestamp"])
-    print("Timestamps(then,now,elapsed): ", user["PendingSell"]["Timestamp"], now, elapsed, flush=True)
-    if elapsed <= 60:
-        print("User ", userid, " Commit sell")
-        db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": int(user["PendingSell"]["Amount"])}})
-        user_portfolio.update_one({"UserID": userid}, {"$inc": {pending_sale['Stock']: -int(pending_sale['Count'])}})
-        return "Success"
-    else:
-        Logging.log_error(["COMMIT_SELL", userid], "Error: Failed to commit sell; time elapsed: " + str(elapsed))
-        print("User ", userid, " Failed to commit sell. Elapsed: ", elapsed)
-        return "Time window for sale exceeded by " + str(elapsed - 60) + "s"
-
+    print("User ", userid, " Commit sell")
+    db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": float(pending_sale["Price"])}})
+    db.StockPortfolio.update_one({"UserID": userid}, {"$inc": {pending_sale['Stock']: -int(pending_sale['Count'])}})
+    return "Committed Sale"
+        
 
 async def cancel_sell(userid):
     if not Cache.client.hexists(userid, Const.CACHE_PENDING_SELL):
@@ -289,7 +288,7 @@ async def set_buy_amount(userid, stock, amount):
         else:
             price = user_open_buys[stock]['Price']
 
-    amount = int(amount)
+    amount = int(float(amount))
 
     if user['AccountBalance'] < amount * float(price):
         err_msg = "Error: NSF for amount and trigger set"
@@ -340,7 +339,7 @@ async def set_buy_trigger(userid, stock, price):
 
 
 async def set_sell_amount(userid, stock, amount):
-    amount = int(amount)
+    amount = int(float(amount))
 
     user_portfolio = db.StockPortfolio.find_one({"UserID": userid})
     if user_portfolio is None:
@@ -357,7 +356,6 @@ async def set_sell_amount(userid, stock, amount):
             Logging.log_error(["SET_SELL_AMOUNT", userid], err_msg)
             return err_msg
 
-    amount = int(amount)
     result = db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
                                                 upsert=True)
 
@@ -406,7 +404,12 @@ async def main():
     try:
         Cache.client.xgroup_create('command_in', 'tx', mkstream=True)
     except:
-        print('exception in xgroup_create command_in')
+        pass
+
+    try:
+        Cache.client.xgroup_create('quote_out', 'tx', mkstream=True)
+    except:
+        pass
 
     while True:
         for _stream, messages in Cache.client.xreadgroup('tx', Cache.container_id, {'command_in': '>'}, 1, block=100):
