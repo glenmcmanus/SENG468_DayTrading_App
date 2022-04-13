@@ -275,7 +275,7 @@ async def set_buy_amount(userid, stock, amount):
     if Cache.client.hexists(price_key, userid):
         price = float(Cache.client.hget(price_key, userid).decode('utf-8'))
     else:
-        user_open_buys = await db.OpenBuyTransactions.find_one({"UserID": userid})
+        user_open_buys = db.OpenBuyTransactions.find_one({"UserID": userid})
         if user_open_buys is None:
             err_msg = "Error: No trigger exists for user. Set a trigger before setting the number to purchase."
             Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
