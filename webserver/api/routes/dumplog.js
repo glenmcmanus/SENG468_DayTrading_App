@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 const CONST = require("../public/javascripts/constants");
-const db = require("../db.js")
+const db = require("../db")
 
 
 /* GET users listing. */

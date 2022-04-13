@@ -3,7 +3,7 @@ var router = express.Router();
 
 const CONST = require("../public/javascripts/constants");
 const redis = require('../redis_client');
-const mongo = require('../db')
+const db = require('../db')
 
 
 /* GET users listing. */

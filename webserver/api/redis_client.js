@@ -50,7 +50,7 @@ function delHash(collection, key) {
 }
 
 async function writeStream(stream, payload) {
-    await client.xAdd(stream, '*', payload);
+    return await client.xAdd(stream, '*', payload);
 }
 
 async function createConsumerGroup(stream, group) {
