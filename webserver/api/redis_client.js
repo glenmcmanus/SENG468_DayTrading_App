@@ -120,5 +120,5 @@ exports.setHash = setHash;
 exports.hashExists = hashExists;
 exports.streams = streams;
 exports.writeStream = writeStream;
-exports.consumerName = consumerName;
+exports.consumer_id = consumer_id;
 exports.listenForId = listenForId;
