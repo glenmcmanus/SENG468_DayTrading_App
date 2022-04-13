@@ -23,8 +23,6 @@ router.put('/', async (req, res) => {
         res.send(user);
     else
         res.send("User not found.");
-    }
-
 });
 
 module.exports = router;

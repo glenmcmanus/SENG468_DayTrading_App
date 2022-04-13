@@ -24,7 +24,6 @@ var set_buyAmountRouter = require('./routes/set_buy_amount');
 var set_buyTriggerRouter = require('./routes/set_buy_trigger');
 var set_sellAmountRouter = require('./routes/set_sell_amount');
 var set_sellTriggerRouter = require('./routes/set_sell_trigger');
-var usersRouter = require('./routes/users');
 
 var app = express();
 
@@ -43,7 +42,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/add', addRouter);
-app.use('/users', usersRouter);
 app.use('/buy', buyRouter);
 app.use('/sell', sellRouter);
 app.use('/cancel_buy', cancelBuyRouter);
