@@ -110,8 +110,9 @@ async def buy(userid, stock, amount):
     amount = float(amount)
 
     if balance < amount:
-        Logging.log_error(["BUY", userid], "Error: Insufficient funds")
-        return "NSF"
+        err_msg = "Error: Insufficient funds"
+        Logging.log_error(["BUY", userid], err_msg)
+        return err_msg
     else:
         if Cache.client.exists(stock):
             stock_price = float(Cache.client.get(stock))
@@ -121,7 +122,7 @@ async def buy(userid, stock, amount):
         count = int(amount / stock_price)
 
         if count == 0:
-            err_msg = "Invalid purchase: minimum price of stock " + stock + " is $" + str(stock_price)
+            err_msg = "Error: Insufficient funds"
             Logging.log_error(["BUY", userid], err_msg)
             return err_msg
 
@@ -258,32 +259,43 @@ async def cancel_sell(userid):
 
 
 async def set_buy_amount(userid, stock, amount):
-    user = db.User.find_one({"UserID": userid})
-    if user is None:
-        return user_not_found("SET_BUY_AMOUNT", userid)
+    if Cache.client.hexists(userid, Const.CACHE_BALANCE):
+        balance = Cache.client.hget(userid, Const.CACHE_BALANCE).decode('utf-8')
+    else:
+        user = db.User.find_one({"UserID": userid})
+        if user is None:
+            return user_not_found("SET_BUY_AMOUNT", userid)
+
+        balance = user['AccountBalance']
+
+    balance = float(balance)
 
     price_key = stock+"_buy_price"
 
     if Cache.client.hexists(price_key, userid):
-        price = Cache.client.hget(price_key, userid)
+        price = float(Cache.client.hget(price_key, userid).decode('utf-8'))
     else:
-        user_open_buys = db.OpenBuyTransactions.find_one({"UserID": userid})
+        user_open_buys = await db.OpenBuyTransactions.find_one({"UserID": userid})
         if user_open_buys is None:
             err_msg = "Error: No trigger exists for user. Set a trigger before setting the number to purchase."
             Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
             return err_msg
+        elif user_open_buys[stock].__contains__('Price'):
+            price = float(user_open_buys[stock]['Price'])
         else:
-            price = user_open_buys[stock]['Price']
+            err_msg = "Error: No trigger exists for user. Set a trigger before setting the number to purchase."
+            Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
+            return err_msg
 
     amount = int(float(amount))
 
-    if user['AccountBalance'] < amount * float(price):
+    if balance < amount * float(price):
         err_msg = "Error: NSF for amount and trigger set"
         Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
         return err_msg
 
-    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
-                                      upsert=True)
+    stock_amount = stock + '.Amount'
+    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock_amount: amount}}, upsert=True)
 
     Cache.client.hset(stock+"_buy_count", userid, amount)
 
@@ -311,24 +323,31 @@ async def cancel_set_buy(userid, stock):
         else:
             Cache.client.hset('buy_triggers', stock, trigger_count - 1)
 
-    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": 0}}})
+    stock_amount = stock + '.Amount'
+    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock_amount: 0}})
     return "Cancelled buy trigger"
 
 
 async def set_buy_trigger(userid, stock, price):
-    user = db.User.find_one({"UserID": userid})
-    if user is None:
-        return user_not_found("SET_BUY_TRIGGER", userid)
+    if Cache.client.hexists(userid, Const.CACHE_BALANCE):
+        balance = Cache.client.hget(userid, Const.CACHE_BALANCE).decode('utf-8')
+    else:
+        user = db.User.find_one({"UserID": userid})
+        if user is None:
+            return user_not_found("SET_BUY_AMOUNT", userid)
 
+        balance = user['AccountBalance']
+
+    balance = float(balance)
     price = float(price)
 
-    if user["AccountBalance"] < price:
+    if balance < price:
         err_msg = "Error: could not set a buy trigger"
         Logging.log_error(["SET_BUY_TRIGGER", userid], err_msg)
         return err_msg
     else:
-        db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Price": price}}},
-                                          upsert=True)
+        stock_price = stock+".Price"
+        db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock_price: price}}, upsert=True)
 
         Cache.client.hset(stock + "_buy_price", userid, price)
         return "Buy trigger set"
@@ -352,8 +371,8 @@ async def set_sell_amount(userid, stock, amount):
             Logging.log_error(["SET_SELL_AMOUNT", userid], err_msg)
             return err_msg
 
-    db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
-                                       upsert=True)
+    stock_amount = stock+".Amount"
+    db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock_amount: amount}}, upsert=True)
 
     Cache.client.hset(stock + "_sell_count", userid, amount)
 
@@ -378,8 +397,8 @@ async def set_sell_trigger(userid, stock, price):
             return err_msg
 
     price = float(price)
-    db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Price": price}}},
-                                       upsert=True)
+    stock_price = stock+'.Price'
+    db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock_price: price}}, upsert=True)
 
     Cache.client.hset(stock + "_sell_price", userid, price)
     return 'Sell trigger set'
@@ -401,7 +420,8 @@ async def cancel_set_sell(userid, stock):
         else:
             Cache.client.hset('sell_triggers', stock, trigger_count - 1)
 
-    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": 0}}})
+    stock_amount = stock+".Amount"
+    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock_amount: 0}})
 
     return 'Cancelled sell trigger'
 

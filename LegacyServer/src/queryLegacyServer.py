@@ -68,11 +68,13 @@ async def trigger_loop(t, trigger):
                     continue
 
                 user = user.decode('utf-8')
-                trigger_price = float(redis_client.hget(price_key, user).decode('utf-8'))
+                if not redis_client.hexists(price_key, user):
+                    continue
 
+                trigger_price = float(redis_client.hget(price_key, user).decode('utf-8'))
                 trigger(redis_client, user, stock, trigger_price, stock_price)
 
-        time.sleep(30)
+        time.sleep(60)
 
 
 async def buy_trigger(redis_client, user, stock, trigger_price, stock_price):
