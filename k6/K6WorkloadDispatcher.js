@@ -26,7 +26,9 @@ const data2 = open(`${__ENV.FILE}`) //papaparse.parse(open('./OneuserWorkLoad.cs
 //console.log(data2)
 
 export default function () {
+    console.log(http.get('http://localhost:5100/DEBUG_DROP'))
 
+    var users = new Set()
     for (var line of data2.split('\n')) {
 	if(line == '')
 	    continue;
@@ -46,19 +48,24 @@ export default function () {
                     data['filename']=line[2]
                 }else
                     data['filename']=line[1]
-            } else if(line.length == 2)
-                data['userID']=line[1]
-            else if (line.length == 3){
-	        data['userID']=line[1]
-                
-                if (line[0] == 'ADD')
-                    data['value']=line[2]
-                else
+            } else {
+		if(users.has(line[1]) == false){
+		    users.add(line[1]);
+                    console.log(http.get('http://localhost:5100/REGISTER?userID=' + line[1]));
+		}
+
+		if (line.length == 4){
+                    data['userID']=line[1]
                     data['stock']=line[2]
-            }else if (line.length == 4){
-                data['userID']=line[1]
-                data['stock']=line[2]
-                data['value']=line[3]
+                    data['value']=line[3]
+                } else {
+		    data['userID']=line[1]
+		        
+		    if (line[0] == 'ADD')
+		        data['value']=line[2]
+		    else
+		        data['stock']=line[2]
+		}
             }
         }
 	else
@@ -66,7 +73,7 @@ export default function () {
 
         console.log(req_str)
         const headers = { 'Content-Type': 'application/json' };
-        const payload= JSON.stringify(data)
+        const payload = JSON.stringify(data)
 
         console.log(payload)
 	
