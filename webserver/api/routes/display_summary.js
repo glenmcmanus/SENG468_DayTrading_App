@@ -1,9 +1,10 @@
+var express = require('express');
+var router = express.Router();
+
 const CONST = require("../public/javascripts/constants");
 const redis = require('../redis_client');
 const mongo = require('../db')
 
-var express = require('express');
-var router = express.Router();
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {

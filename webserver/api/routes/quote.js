@@ -1,10 +1,9 @@
-const CONST = require("../public/javascripts/constants");
-
 var express = require('express');
 var router = express.Router();
-var fetch_client = require('../fetch_client.js')
 
+const CONST = require("../public/javascripts/constants");
 const redis_client = require('../redis_client.js');
+
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
