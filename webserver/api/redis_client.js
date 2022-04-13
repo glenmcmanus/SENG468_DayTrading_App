@@ -2,11 +2,10 @@ require('dotenv').config()
 const redis = require('redis');
 const client = redis.createClient({ url: process.env.REDIS_URL });
 const getId = require('docker-container-id');
+
 var consumerName = null;
 const group = 'web_api';
 const streams = ['command_out', 'quote_out'];
-
-var response_buffer = {}
 
 async function connect() {
 
@@ -19,12 +18,6 @@ async function connect() {
 
     for(let i = 0; i < streams.length; i++)
         await createConsumerGroup(streams[i], group);
-
-    //await createConsumerGroup(streams[0], group);
-    //await createConsumerGroup(stream[1], group);
-
-    await writeStream('command_in', JSON.stringify({'msg': 'hello from web api' + consumerName}));
-    await writeStream('quote_in', JSON.stringify({'msg': 'hello from web api' + consumerName}));
 }
 
 async function setHash(collection, key, json_value) {
@@ -40,8 +33,6 @@ async function getHash(collection, key) {
 }
 
 async function hashExists(collection, key) {
-    console.log(client);
-
     return await client.hExists(collection, key, (err, res) => {
         if(err)
         {
@@ -63,11 +54,8 @@ function delHash(collection, key) {
    });
 }
 
-async function writeStream(stream, payload) {//, res) {
-    //response_buffer[payload['userID']] = res;
-
+async function writeStream(stream, payload) {
     console.log('write payload ' + payload + ' to stream ' + stream);
-
     await client.xAdd(stream, '*', payload);
 }
 
@@ -82,6 +70,52 @@ async function createConsumerGroup(stream, group) {
     }
 }
 
+async function listenForId(stream, id) {
+    for(;;)
+    {
+        try {
+            let response = await client.xReadGroup(
+                client.commandOptions({
+                    isolated: true
+                }),
+                'web_api',
+                consumer_name, [
+                    // XREADGROUP can read from multiple streams, starting at a
+                    // different ID for each...
+                {
+                    key: stream,
+                    id: '>'
+                }
+                ], {
+                    // Read 1 entry at a time, block for 5 seconds if there are none.
+                    COUNT: 1,
+                    BLOCK: 5000
+                }
+            );
+
+            if (response) {
+                no_response = false;
+
+                console.log(response);
+
+                if(response[0].messages[0].id == id);
+                {
+                    client.xAck(stream, group, id);
+                    return response;
+                }
+
+            } else {
+                    // Response is null, we have read everything that is
+                    // in the stream right now...
+                    //console.log('No new stream entries.');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+}
+
+
 async function shutdown() {
     await client.quit();
 }
@@ -94,3 +128,4 @@ exports.hashExists = hashExists;
 exports.streams = streams;
 exports.writeStream = writeStream;
 exports.consumerName = consumerName;
+exports.listenForId = listenForId;

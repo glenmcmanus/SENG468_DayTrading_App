@@ -19,15 +19,10 @@ router.post('/', (req, res) => {
 router.put('/', (req, res) => {
     console.log(req.body);
 
-    //const query = CONST.ADD + ',' + req.body['userID'] + ',' + req.body['value'];
-    //transaction_client.enqueue(req.body['userID'], query, res);
+    const id = await redis_client.writeStream('command_in', req.body);
+    const response = await redis_client.listenForId('command_out', id);
 
-    //const param1 = JSON.parse(req.body);
-    //const command = JSON.stringify({param1, res});
-
-    //console.log(command);
-
-    redis_client.writeStream('command_in', req.body);
+    res.send(response);
 });
 
 module.exports = router;

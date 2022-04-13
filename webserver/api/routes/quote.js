@@ -5,7 +5,6 @@ var router = express.Router();
 var fetch_client = require('../fetch_client.js')
 
 const redis_client = require('../redis_client.js');
-const redis_listener = require('../redis_listener')
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -20,10 +19,10 @@ router.post('/', (req, res) => {
 router.put('/', (req, res) => {
     console.log(req.body);
 
-    const query = req.body["userID"] + ',' + req.body["stock"];
-    fetch_client.enqueue(req.body['userID'], query, res);
+    const id = await redis_client.writeStream('quote_in', req.body);
+    const response = await redis_client.listenForId('quote_out', id);
 
-    redis_client.writeStream('quote', req.body, res);
+    res.send(response);
 });
 
 module.exports = router;

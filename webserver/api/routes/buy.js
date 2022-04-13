@@ -5,8 +5,6 @@ var router = express.Router();
 var transaction_client = require('../transaction_client.js');
 
 const redis_client = require('../redis_client.js');
-const redis_listener = require('../redis_listener')
-
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -19,15 +17,12 @@ router.post('/', (req, res) => {
 });
   
 router.put('/', (req, res) => {
-    console.log("put: " + JSON.stringify(req.body));
+    console.log(req.body);
 
-    const query = CONST.BUY + ',' + req.body['userID'] + ',' + req.body['stock'] + ',' + req.body['value'];
+    const id = await redis_client.writeStream('command_in', req.body);
+    const response = await redis_client.listenForId('command_out', id);
 
-    console.log("query: " + query);
-
-//    transaction_client.enqueue(req.body['userID'], query, res);
-    redis_client.writeStream('transaction', req.body, res);
-
+    res.send(response);
 });
 
 module.exports = router;
