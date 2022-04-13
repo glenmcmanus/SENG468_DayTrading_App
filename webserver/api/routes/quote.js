@@ -18,10 +18,15 @@ router.post('/', (req, res) => {
 router.put('/', async (req, res) => {
     console.log(req.body);
 
-    const id = await redis_client.writeStream('quote_in', req.body);
-    const response = await redis_client.listenForId('quote_out', id);
+    if(redis_client.client.exists(req.body['stock']))
+        res.send(redis_client.client.get(req.body['stock']))
+    else
+    {
+        const id = await redis_client.writeStream('quote_in', req.body);
+        const response = await redis_client.listenForId('quote_out', id);
 
-    res.send(response);
+        res.send(response);
+    }
 });
 
 module.exports = router;

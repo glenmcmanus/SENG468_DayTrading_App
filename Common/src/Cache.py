@@ -12,7 +12,6 @@ client = connect()
 
 '''Start the listener, providing stream, group, callback. The ack for messages must be handled by the callback.'''
 def start_listener(stream, group, callback):
-    print("Listen to ", stream, ' for group ', group)
     listener = connect()
     listener.xgroup_create(stream, group, 0, mkstream=True)
 
@@ -23,5 +22,4 @@ def start_listener(stream, group, callback):
 
 
 def write_to_stream(stream, payload):
-    print('Write ', payload, ' to ', stream, flush=True)
     client.xadd(stream, payload)

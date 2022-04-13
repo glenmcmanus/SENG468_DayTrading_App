@@ -1,20 +1,15 @@
-import json
 import asyncio
-import os
+import Common.src.Cache as Cache
 import Common.src.Constants as Const
 import Common.src.Logging as Logging
-import Common.src.Cache as Cache
+import json
+import os
 import pymongo
 import time
-#import dns.resolver
 
 
 # TODO: check for malformed requests
 async def handle_request(request):
-#request[0] = command
-#request[1] = userid
-#request[2] = funds/stocksymbol
-#request[3] = amount
     if request[b'command'] == b'ADD':
         Logging.log_add_funds(request[b'userID'], request[b'value'])
         return await add_funds(request[b'userID'].decode("utf-8"), request[b'value'].decode("utf-8"))
@@ -24,8 +19,8 @@ async def handle_request(request):
         return await buy(request[b'userID'].decode("utf-8"), request[b'stock'].decode("utf-8"), request[b'value'].decode("utf-8"))
 
     elif request[b'command'] == b'COMMIT_BUY':
-        Logging.log_commit_buy(request[b'userID'].decode("utf-8") )
-        return await commit_buy(request[b'userID'].decode("utf-8") )
+        Logging.log_commit_buy(request[b'userID'].decode("utf-8"))
+        return await commit_buy(request[b'userID'].decode("utf-8"))
 
     elif request[b'command'] == b'CANCEL_BUY':
         Logging.log_cancel_buy(request[b'userID'].decode("utf-8"))
@@ -73,15 +68,12 @@ async def handle_request(request):
 
 
 def user_not_found(command, userid):
-    #print("User ", userid, " not found!", flush=True)
     err_msg = "Error: Invalid user"
-    Logging.log_error(["command", userid], err_msg)
+    Logging.log_error([command, userid], err_msg)
     return err_msg
 
 
 async def add_funds(userid, amount):
-    print("User ", userid, " add $", amount)
-
     user = db.User.find_one({"UserID": userid})
     if user is None:
         return user_not_found("ADD_FUNDS", userid)
@@ -100,7 +92,7 @@ async def quote(userid, stock):
     Cache.write_to_stream(Const.STREAM_QUOTE_IN, {'userID': userid, 'stock': stock})
 
     while not Cache.client.exists(stock):
-        time.sleep(0.1)
+        time.sleep(0.005)
 
     return float(Cache.client.get(stock))
 
@@ -119,7 +111,6 @@ async def buy(userid, stock, amount):
 
     if balance < amount:
         Logging.log_error(["BUY", userid], "Error: Insufficient funds")
-        print("User ", userid, " non-sufficient funds (NSF)", flush=True)
         return "NSF"
     else:
         if Cache.client.exists(stock):
@@ -133,8 +124,6 @@ async def buy(userid, stock, amount):
             err_msg = "Invalid purchase: minimum price of stock " + stock + " is $" + str(stock_price)
             Logging.log_error(["BUY", userid], err_msg)
             return err_msg
-
-        print("User ", userid, " buy ", count, " units of ", stock, flush=True)
 
         timestamp = time.time()
         pending_buy = {"Timestamp": timestamp,
@@ -241,7 +230,6 @@ async def commit_sell(userid):
 
     if elapsed > 60:
         Logging.log_error(["COMMIT_SELL", userid], "Error: Failed to commit sell; time elapsed: " + str(elapsed))
-        print("User ", userid, " Failed to commit sell. Elapsed: ", elapsed)
         return "Time window for sale exceeded by " + str(elapsed - 60) + "s"
 
     user = db.User.find_one({"UserID": userid})
@@ -254,7 +242,6 @@ async def commit_sell(userid):
         Logging.log_error(["COMMIT_SELL", userid], err_msg)
         return err_msg
 
-    print("User ", userid, " Commit sell")
     db.User.update_one({"UserID": userid}, {"$inc": {"AccountBalance": float(pending_sale["Price"])}})
     db.StockPortfolio.update_one({"UserID": userid}, {"$inc": {pending_sale['Stock']: -int(pending_sale['Count'])}})
     return "Committed Sale"
@@ -295,11 +282,15 @@ async def set_buy_amount(userid, stock, amount):
         Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
         return err_msg
 
-    result = db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
-                                               upsert=True)
+    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
+                                      upsert=True)
 
-    print("After set buy amount: ", result.raw_result, flush=True)
     Cache.client.hset(stock+"_buy_count", userid, amount)
+
+    if Cache.client.hexists('buy_triggers', stock):
+        Cache.client.hset('buy_triggers', stock, int(Cache.client.hget('buy_triggers', stock)) + 1)
+    else:
+        Cache.client.hset('buy_triggers', stock, 1)
 
     return "Buy amount set"
 
@@ -313,9 +304,16 @@ async def cancel_set_buy(userid, stock):
     if Cache.client.hexists(key, userid):
         Cache.client.hdel(key, userid)
 
-    result = db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": 0}}})
-    print("After cancel set buy: ", result.raw_result, flush=True)
+    if Cache.client.hexists('buy_triggers', stock):
+        trigger_count = int(Cache.client.hget('triggers', stock))
+        if trigger_count == 1:
+            Cache.client.hdel('buy_triggers', stock)
+        else:
+            Cache.client.hset('buy_triggers', stock, trigger_count - 1)
+
+    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": 0}}})
     return "Cancelled buy trigger"
+
 
 async def set_buy_trigger(userid, stock, price):
     user = db.User.find_one({"UserID": userid})
@@ -327,13 +325,11 @@ async def set_buy_trigger(userid, stock, price):
     if user["AccountBalance"] < price:
         err_msg = "Error: could not set a buy trigger"
         Logging.log_error(["SET_BUY_TRIGGER", userid], err_msg)
-        print("User ", userid, " can not set automated buy for ", stock, flush=True)
         return err_msg
     else:
-        result = db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Price": price}}},
-                                                   upsert=True)
+        db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Price": price}}},
+                                          upsert=True)
 
-        print("After set buy amount: ", result.raw_result, flush=True)
         Cache.client.hset(stock + "_buy_price", userid, price)
         return "Buy trigger set"
 
@@ -356,11 +352,15 @@ async def set_sell_amount(userid, stock, amount):
             Logging.log_error(["SET_SELL_AMOUNT", userid], err_msg)
             return err_msg
 
-    result = db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
-                                                upsert=True)
+    db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": amount}}},
+                                       upsert=True)
 
-    print("After set sell amount: ", result.raw_result, flush=True)
     Cache.client.hset(stock + "_sell_count", userid, amount)
+
+    if Cache.client.hexists('sell_triggers', stock):
+        Cache.client.hset('sell_triggers', stock, int(Cache.client.hget('sell_triggers', stock)) + 1)
+    else:
+        Cache.client.hset('sell_triggers', stock, 1)
 
     return "Sell amount set"
 
@@ -378,8 +378,8 @@ async def set_sell_trigger(userid, stock, price):
             return err_msg
 
     price = float(price)
-    result = db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Price": price}}},
-                                                upsert=True)
+    db.OpenSellTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Price": price}}},
+                                       upsert=True)
 
     Cache.client.hset(stock + "_sell_price", userid, price)
     return 'Sell trigger set'
@@ -394,7 +394,14 @@ async def cancel_set_sell(userid, stock):
     if Cache.client.hexists(key, userid):
         Cache.client.hdel(key, userid)
 
-    result = db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": 0}}})
+    if Cache.client.hexists('sell_triggers', stock):
+        trigger_count = int(Cache.client.hget('sell_triggers', stock))
+        if trigger_count == 1:
+            Cache.client.hdel('sell_triggers', stock)
+        else:
+            Cache.client.hset('sell_triggers', stock, trigger_count - 1)
+
+    db.OpenBuyTransactions.update_one({"UserID": userid}, {"$set": {stock: {"Amount": 0}}})
 
     return 'Cancelled sell trigger'
 
@@ -406,19 +413,10 @@ async def main():
     except:
         pass
 
-    try:
-        Cache.client.xgroup_create('quote_out', 'tx', mkstream=True)
-    except:
-        pass
-
     while True:
-        for _stream, messages in Cache.client.xreadgroup('tx', Cache.container_id, {'command_in': '>'}, 1, block=100):
-            print('listen to stream: ', _stream)
+        for _stream, messages in Cache.client.xreadgroup('tx', Cache.container_id, {'command_in': '>'}, 1, block=30):
             for message in messages:
-                print(message, flush=True)
-
                 response = await handle_request(message[1])
-
                 Cache.client.xadd('command_out', {'response': response})
                 Cache.client.xack('command_in', 'tx', message[0])
 

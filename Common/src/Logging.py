@@ -9,7 +9,8 @@ def set_db(database):
 
 
 def log_add_funds(userid, amount):
-    event = {  "LogType": "UserCommandType",
+    event = {
+               "LogType": "UserCommandType",
                "timestamp": str(time.time()),
                "server": "default",
                "command": "ADD",
@@ -17,10 +18,7 @@ def log_add_funds(userid, amount):
                #"funds": "n/a" #do we need this?
             }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_buy(userid, StockSymbol, amount):
@@ -33,10 +31,7 @@ def log_buy(userid, StockSymbol, amount):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_commit_buy(userid):
@@ -48,10 +43,7 @@ def log_commit_buy(userid):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_cancel_buy(userid):
@@ -63,10 +55,7 @@ def log_cancel_buy(userid):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_sell(userid, StockSymbol, amount):
@@ -79,10 +68,7 @@ def log_sell(userid, StockSymbol, amount):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_commit_sell(userid):
@@ -94,10 +80,7 @@ def log_commit_sell(userid):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_cancel_sell(userid):
@@ -109,10 +92,7 @@ def log_cancel_sell(userid):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_set_buy_amount(userid, StockSymbol, amount):
@@ -125,10 +105,7 @@ def log_set_buy_amount(userid, StockSymbol, amount):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_cancel_set_buy(userid, StockSymbol):
@@ -141,10 +118,7 @@ def log_cancel_set_buy(userid, StockSymbol):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_set_buy_trigger(userid, StockSymbol, amount):
@@ -153,14 +127,11 @@ def log_set_buy_trigger(userid, StockSymbol, amount):
                "server": "default",
                "command": "SET_BUY_TRIGGER",
                "username": userid,
-               "stockSymbol": StockSymbol,
+               "stockSymbol": StockSymbol
                #"funds": "n/a" #do we need this?
-                 }
+            }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_set_sell_amount(userid, StockSymbol, amount):
@@ -173,10 +144,7 @@ def log_set_sell_amount(userid, StockSymbol, amount):
                #"funds": "n/a" #do we need this?
                  }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_set_sell_trigger(userid, StockSymbol, amount):
@@ -187,12 +155,9 @@ def log_set_sell_trigger(userid, StockSymbol, amount):
                "username": userid,
                "stockSymbol": StockSymbol,
                #"funds": "n/a" #do we need this?
-                 }
+            }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
 
 
 def log_cancel_set_sell(userid, StockSymbol):
@@ -203,18 +168,37 @@ def log_cancel_set_sell(userid, StockSymbol):
                "username": userid,
                "stockSymbol": StockSymbol,
                #"funds": "n/a" #do we need this?
-                 }
-
-
-def log_error(request, userid):
-    event = {  "LogType": "ErrorEventType",
-               "timestamp": str(time.time()),
-               "server": "default",
-               "command": request[0],
-               "username": request[1],
             }
 
-    eventLog = db['EventLog']
-    event_id = eventLog.insert_one(event).inserted_id
-    newlog = db['EventLog'].find_one({"username":userid})
-    #print(f"DB log result: {newlog!r}", flush=True)
+    db.EventLog.insert_one(event)
+
+
+def log_quote(request, result):
+    event = {"LogType": "QuoteServerType",
+             "timestamp": str(time.time()),
+             "server": "default",
+             "transactionNum": request['transactionNum'],
+             "price": result[0],
+             "stockSymbol": request[b'stock'],
+             "username": request[b'userID'],
+             "quoteServerTime": result[-2],
+             "cryptokey": result[-1]}
+
+    db.EventLog.insert_one(event)
+
+
+def log_error(request, err_msg):
+    event = {"LogType": "ErrorEventType",
+             "timestamp": str(time.time()),
+             "server": "default",
+             "command": request[0],
+             "username": request[1],
+             "errorMessage": err_msg}
+
+    db.EventLog.insert_one(event)
+
+
+#todo, add generic private method to handle insertion and common attributes
+#def __log(event):
+#    event['timestamp'] = str(time.time())
+#    db.EventLog.insert_one(event)
