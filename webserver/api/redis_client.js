@@ -3,18 +3,13 @@ const redis = require('redis');
 const client = redis.createClient({ url: process.env.REDIS_URL });
 const getId = require('docker-container-id');
 
-var consumerName = null;
+var consumer_id = null;
 const group = 'web_api';
 const streams = ['command_out', 'quote_out'];
 
 async function connect() {
-
-    console.log(process.argv[2]);
-
     await client.connect();
-
-    consumerName = await getId();
-    console.log("Container name:" + consumerName);
+    consumer_id = await getId();
 
     for(let i = 0; i < streams.length; i++)
         await createConsumerGroup(streams[i], group);
@@ -55,7 +50,6 @@ function delHash(collection, key) {
 }
 
 async function writeStream(stream, payload) {
-    console.log('write payload ' + payload + ' to stream ' + stream);
     await client.xAdd(stream, '*', payload);
 }
 
@@ -64,7 +58,6 @@ async function createConsumerGroup(stream, group) {
         await client.xGroupCreate(stream, group, '0', {
             MKSTREAM: true
         });
-        console.log('Created consumer group ' + group + ' for stream ' + stream);
     } catch (e) {
         console.log('Consumer group already exists, skipped creation.');
     }
@@ -79,7 +72,7 @@ async function listenForId(stream, id) {
                     isolated: true
                 }),
                 'web_api',
-                consumer_name, [
+                consumer_id, [
                     // XREADGROUP can read from multiple streams, starting at a
                     // different ID for each...
                 {
