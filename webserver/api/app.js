@@ -6,7 +6,6 @@ var logger = require('morgan');
 var cors = require("cors");
 var mgdb = require('./db.js');
 var redis = require('./redis_client.js')
-var redis_listener = require('./redis_listener.js')
 
 var indexRouter = require('./routes/index');
 var addRouter = require('./routes/add');
@@ -85,8 +84,6 @@ service_setup();
 async function service_setup()
 {
     await redis.connect();
-    redis_listener.startListener();
-
     mgdb.connectDB();
 }
 

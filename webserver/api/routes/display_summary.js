@@ -14,10 +14,10 @@ router.post('/', (req, res) => {
     res.send('Got a POST request');
 });
   
-router.put('/', (req, res) => {
+router.put('/', async (req, res) => {
     console.log(req.body);
 
-    user = db.findUser(req.body['userID']);
+    user = await db.findUser(req.body['userID']);
     if(user.length > 0)
         res.send(user);
     else

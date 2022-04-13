@@ -16,7 +16,7 @@ router.post('/', (req, res) => {
     res.send('Got a POST request');
 });
   
-router.put('/', (req, res) => {
+router.put('/', async (req, res) => {
     console.log(req.body);
 
     const id = await redis_client.writeStream('quote_in', req.body);
