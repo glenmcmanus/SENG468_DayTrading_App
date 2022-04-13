@@ -276,16 +276,12 @@ async def set_buy_amount(userid, stock, amount):
         price = float(Cache.client.hget(price_key, userid).decode('utf-8'))
     else:
         user_open_buys = db.OpenBuyTransactions.find_one({"UserID": userid})
-        if user_open_buys is None:
+        if user_open_buys is None or stock not in user_open_buys or 'Price' not in user_open_buys[stock]:
             err_msg = "Error: No trigger exists for user. Set a trigger before setting the number to purchase."
             Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
             return err_msg
-        elif user_open_buys[stock].__contains__('Price'):
-            price = float(user_open_buys[stock]['Price'])
         else:
-            err_msg = "Error: No trigger exists for user. Set a trigger before setting the number to purchase."
-            Logging.log_error(["SET_BUY_AMOUNT", userid], err_msg)
-            return err_msg
+            price = float(user_open_buys[stock]['Price'])
 
     amount = int(float(amount))
 
