@@ -3,6 +3,7 @@ import Common.src.Cache as Cache
 import Common.src.Constants as Const
 import Common.src.Logging as Logging
 import os
+import pymongo
 from subprocess import Popen, PIPE, run
 import threading
 import time
@@ -40,7 +41,7 @@ async def process_request(stock_symbol, username):
     query_string = await query_server(stock_symbol, username)
     response = query_string.split(",")
     Cache.client.set(stock_symbol, response[0], px=60999)
-    Logging.log_quote(stock_symbol, response)
+    Logging.log_quote(username, stock_symbol, response)
     return response
 
 
@@ -118,6 +119,8 @@ async def main():
                 Cache.write_to_stream('quote_out', {'stock': stock, 'price': response[0]})
                 Cache.client.xack('quote_in', 'tx', message[0])
 
+db = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"])).DayTrading
+Logging.set_db(db)
 
 Cache.client = Cache.connect()
 asyncio.run(main())

@@ -1,6 +1,4 @@
 import http from 'k6/http'
-import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js';
-//import { OneuserWorkLoad } from './OneuserWorkLoad.txt';
 
 const query_param_definition = {
     'ADD':['userid','amount'],
@@ -22,8 +20,7 @@ const query_param_definition = {
 }
 
 console.log(`${__ENV.FILE}`)
-const data2 = open(`${__ENV.FILE}`) //papaparse.parse(open('./OneuserWorkLoad.csv'), { header: false }).data;
-//console.log(data2)
+const data2 = open(`${__ENV.FILE}`)
 
 export default function () {
     console.log(http.get('http://localhost:5100/DEBUG_DROP'))
@@ -34,7 +31,9 @@ export default function () {
 	    continue;
 
         console.log(line)
-        line = String(line).trim().split(' ')[1].split(',')
+        line = String(line).trim().split(' ')
+	const line_num = line[0]
+	line = line[1].split(',')
 
         var req_str = 'http://localhost:5100/' + String(line[0]).toLowerCase();
 

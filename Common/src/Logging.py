@@ -173,14 +173,15 @@ def log_cancel_set_sell(userid, StockSymbol):
     db.EventLog.insert_one(event)
 
 
-def log_quote(request, result):
+def log_quote(userid, stock, result):
     event = {"LogType": "QuoteServerType",
              "timestamp": str(time.time()),
              "server": "default",
-             "transactionNum": request['transactionNum'],
+             #todo
+             #"transactionNum": request['transactionNum'],
              "price": result[0],
-             "stockSymbol": request[b'stock'],
-             "username": request[b'userID'],
+             "stockSymbol": stock,
+             "username": userid,
              "quoteServerTime": result[-2],
              "cryptokey": result[-1]}
 

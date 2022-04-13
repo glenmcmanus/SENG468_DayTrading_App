@@ -11,6 +11,7 @@ WORKDIR /usr/legacy_quote
 
 # install dependencies
 #RUN pip install -r requirements.txt
+RUN pip install pymongo
 RUN pip install redis
 RUN apt-get update && apt-get -y dist-upgrade
 RUN apt install -y netcat

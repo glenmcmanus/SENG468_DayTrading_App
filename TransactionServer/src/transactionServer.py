@@ -422,8 +422,7 @@ async def main():
 
 
 Cache.client = Cache.connect()
-db_client = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"]))
-db = db_client.DayTrading
+db = pymongo.MongoClient("router1", int(os.environ["MONGO_PORT"])).DayTrading
 Logging.set_db(db)
 
 asyncio.run(main())
